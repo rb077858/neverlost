@@ -2,25 +2,42 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
+
+<!-- 🔥 חשוב לנייד -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>טוען...</title>
 
 <style>
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+    margin: 0;
+    padding: 15px;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
 }
 
 .container {
     background: white;
-    padding: 25px;
+    padding: 20px;
     border-radius: 20px;
     text-align: center;
-    width: 350px;
+    width: 100%;
+    max-width: 400px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+h1 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+p {
+    font-size: 16px;
+    color: #555;
 }
 
 .buttons {
@@ -31,17 +48,31 @@ body {
 }
 
 .btn {
-    padding: 12px;
+    padding: 14px;
     border-radius: 15px;
     text-decoration: none;
     color: white;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn:active {
+    transform: scale(0.97);
 }
 
 .whatsapp { background: #25D366; }
 .phone { background: #007BFF; }
 .email { background: #FF6B6B; }
+
+/* 📱 התאמות למסכים קטנים מאוד */
+@media (max-width: 350px) {
+    h1 { font-size: 18px; }
+    p { font-size: 14px; }
+    .btn { font-size: 15px; padding: 12px; }
+}
 </style>
 </head>
 
@@ -52,14 +83,13 @@ body {
     <p id="desc"></p>
 
     <div class="buttons">
-        <a id="wa" class="btn whatsapp">וואטסאפ</a>
-        <a id="phone" class="btn phone">טלפון</a>
-        <a id="email" class="btn email">מייל</a>
+        <a id="wa" class="btn whatsapp">💬 וואטסאפ</a>
+        <a id="phone" class="btn phone">📞 התקשר</a>
+        <a id="email" class="btn email">✉️ שלח מייל</a>
     </div>
 </div>
 
 <script>
-// 🧠 "מסד נתונים" של החפצים
 const items = {
     "calc1": {
         name: "📱 מצאתם את המחשבון שלי!",
@@ -87,22 +117,16 @@ const items = {
     }
 };
 
-// 🔍 לוקח את ה-ID מהקישור
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
-// אם החפץ קיים
 if (items[id]) {
     const item = items[id];
 
-    // תוכן הדף
     document.getElementById("title").innerText = item.name;
     document.getElementById("desc").innerText = item.desc;
-
-    // 🧠 משנה גם את כותרת הדפדפן!
     document.title = item.name;
 
-    // כפתורים
     document.getElementById("wa").href =
         "https://wa.me/972" + item.phone.substring(1);
 
