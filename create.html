@@ -86,7 +86,7 @@ window.createItem = async function() {
         name, desc, phone, email
     });
 
-    const link = window.location.origin + "/index.html?id=" + docRef.id;
+    const link = "https://rb077858.github.io/qrfind/?id=" + docRef.id;
 
     document.getElementById("result").innerHTML =
         "הקישור שלך:<br><a href='" + link + "'>" + link + "</a>";
