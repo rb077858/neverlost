@@ -3,41 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>יצירת חפץ</title>
+<title>יצירת חפצים</title>
 
 <style>
 body {
     font-family: Arial;
     background: linear-gradient(135deg, #74ebd5, #ACB6E5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    margin: 0;
+    padding: 15px;
 }
 
 .container {
     background: white;
     padding: 20px;
     border-radius: 20px;
-    width: 300px;
-    text-align: center;
+    max-width: 400px;
+    margin: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
 input, textarea {
     width: 100%;
-    margin: 8px 0;
+    margin: 6px 0;
     padding: 10px;
     border-radius: 10px;
     border: 1px solid #ccc;
 }
 
 button {
+    width: 100%;
     padding: 10px;
     border: none;
     border-radius: 10px;
     background: #007BFF;
     color: white;
     font-size: 16px;
+    margin-top: 10px;
+}
+
+.item {
+    background: #f3f3f3;
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.delete {
+    background: red;
+    margin-top: 5px;
 }
 </style>
 </head>
@@ -48,21 +61,28 @@ button {
     <h2>יצירת חפץ</h2>
 
     <input id="name" placeholder="שם החפץ">
-    <textarea id="desc" placeholder="תיאור"></textarea>
+    <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
     <input id="phone" placeholder="טלפון">
     <input id="email" placeholder="אימייל">
 
-    <button onclick="createItem()">צור</button>
+    <button onclick="createItem()">צור חפץ</button>
 
-    <p id="result"></p>
+    <p id="status"></p>
+
+    <hr>
+    <h3>החפצים שלי</h3>
+    <div id="items"></div>
 </div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔥 כאן אתה מדביק את הקוד שלך
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// 🔥 שים כאן את הקונפיג שלך
 const firebaseConfig = {
   apiKey: "AIzaSyC6aKRxx0JkeBA7RjeZK23SkCLeO-zqXVU",
   authDomain: "lost-items-28167.firebaseapp.com",
@@ -72,24 +92,101 @@ const firebaseConfig = {
   appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const auth = getAuth();
+const provider = new GoogleAuthProvider();
+
+let userEmail = "";
+let isAdmin = false;
+
+// 📄 קריאת admin.txt
+async function checkAdmin(email) {
+    try {
+        const res = await fetch("admin.txt");
+        const text = await res.text();
+        const admins = text.split("\n").map(e => e.trim());
+        return admins.includes(email);
+    } catch {
+        return false;
+    }
+}
+
+// 🔐 התחברות
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        await signInWithPopup(auth, provider);
+    } else {
+        userEmail = user.email;
+        isAdmin = await checkAdmin(userEmail);
+        loadItems();
+    }
+});
+
+// 📦 יצירת חפץ
 window.createItem = async function() {
     const name = document.getElementById("name").value;
-    const desc = document.getElementById("desc").value;
+    const message = document.getElementById("message").value;
     const phone = document.getElementById("phone").value;
     const email = document.getElementById("email").value;
 
+    // ספירת חפצים
+    const q = query(collection(db, "items"), where("owner", "==", userEmail));
+    const snapshot = await getDocs(q);
+
+    if (!isAdmin && snapshot.size >= 5) {
+        document.getElementById("status").innerText = "הגעת למקסימום 5 חפצים";
+        return;
+    }
+
     const docRef = await addDoc(collection(db, "items"), {
-        name, desc, phone, email
+        name,
+        message,
+        phone,
+        email,
+        owner: userEmail
     });
 
     const link = "https://rb077858.github.io/qrfind/?id=" + docRef.id;
 
-    document.getElementById("result").innerHTML =
-        "הקישור שלך:<br><a href='" + link + "'>" + link + "</a>";
+    document.getElementById("status").innerHTML =
+        "נוצר! <br><a href='" + link + "' target='_blank'>" + link + "</a>";
+
+    loadItems();
+}
+
+// 📋 טעינת חפצים
+async function loadItems() {
+    const container = document.getElementById("items");
+    container.innerHTML = "";
+
+    const q = query(collection(db, "items"), where("owner", "==", userEmail));
+    const snapshot = await getDocs(q);
+
+    snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+        const id = docSnap.id;
+
+        const div = document.createElement("div");
+        div.className = "item";
+
+        const link = "https://rb077858.github.io/qrfind/?id=" + id;
+
+        div.innerHTML = `
+            <b>${item.name}</b><br>
+            <a href="${link}" target="_blank">פתח</a>
+            <button class="delete" onclick="deleteItem('${id}')">מחק</button>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+// 🗑️ מחיקה
+window.deleteItem = async function(id) {
+    await deleteDoc(doc(db, "items", id));
+    loadItems();
 }
 </script>
 
