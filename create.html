@@ -41,6 +41,10 @@ button {
     margin-top: 10px;
 }
 
+.login {
+    background: #DB4437;
+}
+
 .item {
     background: #f3f3f3;
     padding: 10px;
@@ -58,20 +62,27 @@ button {
 <body>
 
 <div class="container">
+
     <h2>יצירת חפץ</h2>
 
-    <input id="name" placeholder="שם החפץ">
-    <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
-    <input id="phone" placeholder="טלפון">
-    <input id="email" placeholder="אימייל">
+    <!-- 🔐 כפתור התחברות -->
+    <button class="login" onclick="login()">🔐 התחברות עם Google</button>
 
-    <button onclick="createItem()">צור חפץ</button>
+    <div id="app" style="display:none;">
+        <input id="name" placeholder="שם החפץ">
+        <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
+        <input id="phone" placeholder="טלפון">
+        <input id="email" placeholder="אימייל">
 
-    <p id="status"></p>
+        <button onclick="createItem()">צור חפץ</button>
 
-    <hr>
-    <h3>החפצים שלי</h3>
-    <div id="items"></div>
+        <p id="status"></p>
+
+        <hr>
+        <h3>החפצים שלי</h3>
+        <div id="items"></div>
+    </div>
+
 </div>
 
 <script type="module">
@@ -82,7 +93,7 @@ from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// 🔥 שים כאן את הקונפיג שלך
+// 🔥 הקונפיג שלך
 const firebaseConfig = {
   apiKey: "AIzaSyC6aKRxx0JkeBA7RjeZK23SkCLeO-zqXVU",
   authDomain: "lost-items-28167.firebaseapp.com",
@@ -101,7 +112,7 @@ const provider = new GoogleAuthProvider();
 let userEmail = "";
 let isAdmin = false;
 
-// 📄 קריאת admin.txt
+// 📄 בדיקת אדמין
 async function checkAdmin(email) {
     try {
         const res = await fetch("admin.txt");
@@ -113,25 +124,30 @@ async function checkAdmin(email) {
     }
 }
 
-// 🔐 התחברות
+// 🔐 התחברות בלחיצה בלבד
+window.login = async function() {
+    await signInWithPopup(auth, provider);
+}
+
+// 👤 אחרי התחברות
 onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-        await signInWithPopup(auth, provider);
-    } else {
+    if (user) {
         userEmail = user.email;
         isAdmin = await checkAdmin(userEmail);
+
+        document.getElementById("app").style.display = "block";
+
         loadItems();
     }
 });
 
-// 📦 יצירת חפץ
+// 📦 יצירה
 window.createItem = async function() {
     const name = document.getElementById("name").value;
     const message = document.getElementById("message").value;
     const phone = document.getElementById("phone").value;
     const email = document.getElementById("email").value;
 
-    // ספירת חפצים
     const q = query(collection(db, "items"), where("owner", "==", userEmail));
     const snapshot = await getDocs(q);
 
@@ -156,7 +172,7 @@ window.createItem = async function() {
     loadItems();
 }
 
-// 📋 טעינת חפצים
+// 📋 טעינה
 async function loadItems() {
     const container = document.getElementById("items");
     container.innerHTML = "";
@@ -168,10 +184,10 @@ async function loadItems() {
         const item = docSnap.data();
         const id = docSnap.id;
 
+        const link = "https://rb077858.github.io/qrfind/?id=" + id;
+
         const div = document.createElement("div");
         div.className = "item";
-
-        const link = "https://rb077858.github.io/qrfind/?id=" + id;
 
         div.innerHTML = `
             <b>${item.name}</b><br>
