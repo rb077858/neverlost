@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>יצירת חפץ</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    width: 300px;
+    text-align: center;
+}
+
+input, textarea {
+    width: 100%;
+    margin: 8px 0;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #007BFF;
+    color: white;
+    font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>יצירת חפץ</h2>
+
+    <input id="name" placeholder="שם החפץ">
+    <textarea id="desc" placeholder="תיאור"></textarea>
+    <input id="phone" placeholder="טלפון">
+    <input id="email" placeholder="אימייל">
+
+    <button onclick="createItem()">צור</button>
+
+    <p id="result"></p>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔥 כאן אתה מדביק את הקוד שלך
+const firebaseConfig = {
+  apiKey: "AIzaSyC6aKRxx0JkeBA7RjeZK23SkCLeO-zqXVU",
+  authDomain: "lost-items-28167.firebaseapp.com",
+  projectId: "lost-items-28167",
+  storageBucket: "lost-items-28167.firebasestorage.app",
+  messagingSenderId: "536499158176",
+  appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.createItem = async function() {
+    const name = document.getElementById("name").value;
+    const desc = document.getElementById("desc").value;
+    const phone = document.getElementById("phone").value;
+    const email = document.getElementById("email").value;
+
+    const docRef = await addDoc(collection(db, "items"), {
+        name, desc, phone, email
+    });
+
+    const link = window.location.origin + "/index.html?id=" + docRef.id;
+
+    document.getElementById("result").innerHTML =
+        "הקישור שלך:<br><a href='" + link + "'>" + link + "</a>";
+}
+</script>
+
+</body>
+</html>
