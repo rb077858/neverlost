@@ -2,10 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-
-<!-- 🔥 חשוב לנייד -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>טוען...</title>
 
 <style>
@@ -36,8 +33,8 @@ h1 {
 }
 
 p {
-    font-size: 16px;
     color: #555;
+    font-size: 16px;
 }
 
 .buttons {
@@ -66,13 +63,6 @@ p {
 .whatsapp { background: #25D366; }
 .phone { background: #007BFF; }
 .email { background: #FF6B6B; }
-
-/* 📱 התאמות למסכים קטנים מאוד */
-@media (max-width: 350px) {
-    h1 { font-size: 18px; }
-    p { font-size: 14px; }
-    .btn { font-size: 15px; padding: 12px; }
-}
 </style>
 </head>
 
@@ -80,55 +70,65 @@ p {
 
 <div class="container">
     <h1 id="title">טוען...</h1>
-    <p id="desc"></p>
+    <p id="message"></p>
 
     <div class="buttons">
-        <a id="wa" class="btn whatsapp">💬 וואטסאפ</a>
+        <a id="wa" class="btn whatsapp">💬 שלח וואטסאפ</a>
         <a id="phone" class="btn phone">📞 התקשר</a>
         <a id="email" class="btn email">✉️ שלח מייל</a>
     </div>
 </div>
 
-<script>
-const items = {
-    "calc1": {
-        name: "📱 מצאתם את המחשבון שלי!",
-        desc: "אשמח מאוד אם תחזירו אותו 🙏",
-        phone: "0532476787",
-        email: "rb077858@gmail.com"
-    },
-    "bag1": {
-        name: "🎒 מצאתם את התיק שלי!",
-        desc: "יש שם דברים חשובים 😅 אשמח אם תחזירו",
-        phone: "0532476787",
-        email: "rb077858@gmail.com"
-    },
-    "laptop1": {
-        name: "💻 מצאתם את המחשב שלי!",
-        desc: "יש עליו דברים חשובים מאוד 🙏 אשמח אם תחזירו",
-        phone: "0532476787",
-        email: "rb077858@gmail.com"
-    },
-    "phone1": {
-        name: "📱 מצאתם את הטלפון שלי!",
-        desc: "זה ממש חשוב לי 😱 אשמח אם תחזירו",
-        phone: "0532476787",
-        email: "rb077858@gmail.com"
-    }
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔥 שים כאן את הקונפיג שלך
+const firebaseConfig = {
+  apiKey: "AIzaSyC6aKRxx0JkeBA7RjeZK23SkCLeO-zqXVU",
+  authDomain: "lost-items-28167.firebaseapp.com",
+  projectId: "lost-items-28167",
+  storageBucket: "lost-items-28167.firebasestorage.app",
+  messagingSenderId: "536499158176",
+  appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
 
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 🔍 קבלת ID מהקישור
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
-if (items[id]) {
-    const item = items[id];
+if (!id) {
+    document.getElementById("title").innerText = "❌ אין קוד";
+    throw new Error("No ID");
+}
 
-    document.getElementById("title").innerText = item.name;
-    document.getElementById("desc").innerText = item.desc;
+// 📦 שליפת נתונים
+const docRef = doc(db, "items", id);
+const docSnap = await getDoc(docRef);
+
+if (docSnap.exists()) {
+    const item = docSnap.data();
+
+    // ✨ תוכן
+    document.getElementById("title").innerText =
+        "📦 מצאת את ה" + item.name + " שלי!";
+    document.getElementById("message").innerText =
+        item.message || "אשמח אם תחזיר 🙏";
+
     document.title = item.name;
 
+    // 📱 וואטסאפ עם טקסט דינמי
+    const text = encodeURIComponent(
+        "היי, מצאתי את ה" + item.name + " שלך!"
+    );
+
     document.getElementById("wa").href =
-        "https://wa.me/972" + item.phone.substring(1);
+        "https://wa.me/972" + item.phone.substring(1) + "?text=" + text;
 
     document.getElementById("phone").href =
         "tel:" + item.phone;
@@ -138,7 +138,7 @@ if (items[id]) {
 
 } else {
     document.getElementById("title").innerText = "❌ חפץ לא נמצא";
-    document.getElementById("desc").innerText = "ייתכן שהקוד שגוי";
+    document.getElementById("message").innerText = "ייתכן שהקוד שגוי";
     document.title = "שגיאה";
 }
 </script>
