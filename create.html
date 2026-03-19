@@ -3,102 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>יצירת חפצים</title>
+<title>יצירת חפצים עם QR</title>
 
 <style>
-body {
-    font-family: Arial;
-    background: linear-gradient(135deg, #74ebd5, #ACB6E5);
-    margin: 0;
-    padding: 15px;
-}
-
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 20px;
-    max-width: 400px;
-    margin: auto;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-}
-
-input, textarea {
-    width: 100%;
-    margin: 6px 0;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 10px;
-    background: #007BFF;
-    color: white;
-    font-size: 16px;
-    margin-top: 10px;
-    cursor: pointer;
-}
-
-.login {
-    background: #DB4437;
-}
-
-.logout {
-    background: #555;
-}
-
-.info {
-    font-size: 14px;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.item {
-    background: #f3f3f3;
-    padding: 10px;
-    border-radius: 10px;
-    margin-top: 10px;
-}
-
-.delete {
-    background: red;
-    margin-top: 5px;
-}
+body { font-family: Arial; background: linear-gradient(135deg, #74ebd5, #ACB6E5); margin:0; padding:15px;}
+.container { background: white; padding:20px; border-radius:20px; max-width:400px; margin:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2);}
+input, textarea { width:100%; margin:6px 0; padding:10px; border-radius:10px; border:1px solid #ccc;}
+button { width:100%; padding:10px; border:none; border-radius:10px; background:#007BFF; color:white; font-size:16px; margin-top:10px; cursor:pointer;}
+.login { background:#DB4437;}
+.logout { background:#555;}
+.info { font-size:14px; margin-bottom:10px; color:#333;}
+.item { background:#f3f3f3; padding:10px; border-radius:10px; margin-top:10px;}
+.delete { background:red; margin-top:5px;}
+.qr-container { margin-top:10px; text-align:center; }
+.qr-download { margin-top:5px; background:#28a745; }
 </style>
 </head>
-
 <body>
 <div class="container">
+<h2>יצירת חפץ</h2>
 
-    <h2>יצירת חפץ</h2>
+<button id="loginBtn" class="login" onclick="login()">🔐 התחבר עם Google</button>
+<button id="logoutBtn" class="logout" onclick="logout()" style="display:none;">🔓 התנתק</button>
+<div id="userInfo" class="info"></div>
 
-    <!-- כפתורי התחברות והתנתקות -->
-    <button id="loginBtn" class="login" onclick="login()">🔐 התחבר עם Google</button>
-    <button id="logoutBtn" class="logout" onclick="logout()" style="display:none;">🔓 התנתק</button>
-
-    <!-- מידע משתמש -->
-    <div id="userInfo" class="info"></div>
-
-    <!-- אזור יצירת חפצים -->
-    <div id="app" style="display:none;">
-        <input id="name" placeholder="שם החפץ">
-        <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
-        <input id="phone" placeholder="טלפון">
-        <input id="email" placeholder="אימייל">
-
-        <button onclick="createItem()">צור חפץ</button>
-
-        <p id="status"></p>
-
-        <hr>
-        <h3>החפצים שלי</h3>
-        <div id="items"></div>
-    </div>
-
+<div id="app" style="display:none;">
+    <input id="name" placeholder="שם החפץ">
+    <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
+    <input id="phone" placeholder="טלפון">
+    <input id="email" placeholder="אימייל">
+    <button onclick="createItem()">צור חפץ</button>
+    <p id="status"></p>
+    <div id="qrNew" class="qr-container"></div>
+    <hr>
+    <h3>החפצים שלי</h3>
+    <div id="items"></div>
 </div>
+</div>
+
+<!-- ספריית QRCode.js -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -107,7 +51,6 @@ from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// 🔥 Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyC6aKRxx0JkeBA7RjeZK23SkCLeO-zqXVU",
   authDomain: "lost-items-28167.firebaseapp.com",
@@ -116,8 +59,6 @@ const firebaseConfig = {
   messagingSenderId: "536499158176",
   appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
-
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth();
@@ -126,113 +67,126 @@ const provider = new GoogleAuthProvider();
 let userEmail = "";
 let isAdmin = false;
 
-// בדיקת אדמין
 async function checkAdmin(email) {
     try {
         const res = await fetch("admin.txt");
         const text = await res.text();
-        const admins = text.split("\n").map(e => e.trim());
+        const admins = text.split("\n").map(e=>e.trim());
         return admins.includes(email);
-    } catch {
-        return false;
-    }
+    } catch { return false; }
 }
 
-// התחברות בלחיצה
-window.login = async function() {
-    await signInWithPopup(auth, provider);
-}
-
-// התנתקות
+window.login = async function() { await signInWithPopup(auth, provider); }
 window.logout = async function() {
-    await signOut(auth);
-    userEmail = "";
-    isAdmin = false;
-    document.getElementById("app").style.display = "none";
-    document.getElementById("userInfo").innerText = "";
-    document.getElementById("loginBtn").style.display = "block";
-    document.getElementById("logoutBtn").style.display = "none";
+    await signOut(auth); userEmail=""; isAdmin=false;
+    document.getElementById("app").style.display="none";
+    document.getElementById("userInfo").innerText="";
+    document.getElementById("loginBtn").style.display="block";
+    document.getElementById("logoutBtn").style.display="none";
 }
 
-// אחרי התחברות
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        userEmail = user.email;
-        isAdmin = await checkAdmin(userEmail);
-
-        document.getElementById("loginBtn").style.display = "none";
-        document.getElementById("logoutBtn").style.display = "block";
-        document.getElementById("app").style.display = "block";
-
+onAuthStateChanged(auth, async (user)=>{
+    if(user){
+        userEmail=user.email;
+        isAdmin=await checkAdmin(userEmail);
+        document.getElementById("loginBtn").style.display="none";
+        document.getElementById("logoutBtn").style.display="block";
+        document.getElementById("app").style.display="block";
         loadItems();
     }
 });
 
-// יצירת חפץ
-window.createItem = async function() {
-    const name = document.getElementById("name").value;
-    const message = document.getElementById("message").value;
-    const phone = document.getElementById("phone").value;
-    const email = document.getElementById("email").value;
+// יצירת חפץ + QR
+window.createItem = async function(){
+    const name=document.getElementById("name").value;
+    const message=document.getElementById("message").value;
+    const phone=document.getElementById("phone").value;
+    const email=document.getElementById("email").value;
 
-    const q = query(collection(db, "items"), where("owner", "==", userEmail));
+    const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
-
-    if (!isAdmin && snapshot.size >= 5) {
-        document.getElementById("status").innerText = "הגעת למקסימום 5 חפצים";
-        return;
+    if(!isAdmin && snapshot.size>=5){
+        document.getElementById("status").innerText="הגעת למקסימום 5 חפצים"; return;
     }
 
-    const docRef = await addDoc(collection(db, "items"), {
-        name,
-        message,
-        phone,
-        email,
-        owner: userEmail
+    const docRef = await addDoc(collection(db,"items"), {name,message,phone,email,owner:userEmail});
+    const link = "https://rb077858.github.io/qrfind/?id="+docRef.id;
+    document.getElementById("status").innerHTML="נוצר! <br><a href='"+link+"' target='_blank'>"+link+"</a>";
+
+    // QR אוטומטי אחרי יצירה
+    const qrDiv=document.getElementById("qrNew");
+    qrDiv.innerHTML="";
+    const canvas=document.createElement("canvas");
+    qrDiv.appendChild(canvas);
+    QRCode.toCanvas(canvas, link, {width:200}, function(error){
+        if(error) console.error(error);
     });
-
-    const link = "https://rb077858.github.io/qrfind/?id=" + docRef.id;
-
-    document.getElementById("status").innerHTML =
-        "נוצר! <br><a href='" + link + "' target='_blank'>" + link + "</a>";
+    // כפתור הורדה
+    const btn=document.createElement("button");
+    btn.innerText="⬇ הורד QR";
+    btn.className="qr-download";
+    btn.onclick=function(){
+        const a=document.createElement("a");
+        a.href=canvas.toDataURL("image/png");
+        a.download=name+"_QR.png";
+        a.click();
+    };
+    qrDiv.appendChild(btn);
 
     loadItems();
 }
 
-// טעינת חפצים + חישוב כמה נשאר
-async function loadItems() {
-    const container = document.getElementById("items");
-    container.innerHTML = "";
-
-    const q = query(collection(db, "items"), where("owner", "==", userEmail));
+// טעינת חפצים + QR להורדה לכל חפץ
+async function loadItems(){
+    const container=document.getElementById("items");
+    container.innerHTML="";
+    const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
+    let remaining=isAdmin?"∞":(5-snapshot.size);
+    document.getElementById("userInfo").innerText="מחובר כ: "+userEmail+" | נשאר לך ליצור: "+remaining;
 
-    let remaining = isAdmin ? "∞" : (5 - snapshot.size);
-    document.getElementById("userInfo").innerText =
-        "מחובר כ: " + userEmail + " | נשאר לך ליצור: " + remaining;
+    snapshot.forEach(docSnap=>{
+        const item=docSnap.data();
+        const id=docSnap.id;
+        const link="https://rb077858.github.io/qrfind/?id="+id;
 
-    snapshot.forEach(docSnap => {
-        const item = docSnap.data();
-        const id = docSnap.id;
-        const link = "https://rb077858.github.io/qrfind/?id=" + id;
+        const div=document.createElement("div");
+        div.className="item";
 
-        const div = document.createElement("div");
-        div.className = "item";
-        div.innerHTML = `
-            <b>${item.name}</b><br>
-            <a href="${link}" target="_blank">פתח</a>
-            <button class="delete" onclick="deleteItem('${id}')">מחק</button>
-        `;
+        // QR לכל חפץ
+        const canvas=document.createElement("canvas");
+        QRCode.toCanvas(canvas, link, {width:150}, function(err){if(err) console.error(err);});
+
+        const btn=document.createElement("button");
+        btn.innerText="⬇ הורד QR";
+        btn.className="qr-download";
+        btn.onclick=function(){
+            const a=document.createElement("a");
+            a.href=canvas.toDataURL("image/png");
+            a.download=item.name+"_QR.png";
+            a.click();
+        };
+
+        div.innerHTML="<b>"+item.name+"</b><br><a href='"+link+"' target='_blank'>פתח</a> ";
+        div.appendChild(canvas);
+        div.appendChild(btn);
+
+        // כפתור מחיקה
+        const delBtn=document.createElement("button");
+        delBtn.className="delete";
+        delBtn.innerText="מחק";
+        delBtn.onclick=function(){ deleteItem(id); };
+        div.appendChild(delBtn);
+
         container.appendChild(div);
     });
 }
 
 // מחיקה
-window.deleteItem = async function(id) {
-    await deleteDoc(doc(db, "items", id));
+window.deleteItem=async function(id){
+    await deleteDoc(doc(db,"items",id));
     loadItems();
 }
 </script>
-
 </body>
 </html>
