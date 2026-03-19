@@ -39,10 +39,21 @@ button {
     color: white;
     font-size: 16px;
     margin-top: 10px;
+    cursor: pointer;
 }
 
 .login {
     background: #DB4437;
+}
+
+.logout {
+    background: #555;
+}
+
+.info {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: #333;
 }
 
 .item {
@@ -65,8 +76,13 @@ button {
 
     <h2>יצירת חפץ</h2>
 
-    <!-- 🔐 כפתור התחברות -->
-    <button class="login" onclick="login()">🔐 התחברות עם Google</button>
+    <!-- 🔐 התחברות -->
+    <button id="loginBtn" class="login" onclick="login()">🔐 התחבר עם Google</button>
+    <!-- 🔓 התנתקות -->
+    <button id="logoutBtn" class="logout" onclick="logout()" style="display:none;">🔓 התנתק</button>
+
+    <!-- 👤 מידע משתמש -->
+    <div id="userInfo" class="info"></div>
 
     <div id="app" style="display:none;">
         <input id="name" placeholder="שם החפץ">
@@ -90,16 +106,143 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } 
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// 🔥 הקונפיג שלך
+// 🔥 קונפיג Firebase שלך
 const firebaseConfig = {
   apiKey: "AIzaSyC6aKRxx0JkeBA7RjeZK23SkCLeO-zqXVU",
   authDomain: "lost-items-28167.firebaseapp.com",
   projectId: "lost-items-28167",
   storageBucket: "lost-items-28167.firebasestorage.app",
   messagingSenderId: "536499158176",
+  appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth();
+const provider = new GoogleAuthProvider();
+
+let userEmail = "";
+let isAdmin = false;
+
+// 📄 בדיקת אדמין
+async function checkAdmin(email) {
+    try {
+        const res = await fetch("admin.txt");
+        const text = await res.text();
+        const admins = text.split("\n").map(e => e.trim());
+        return admins.includes(email);
+    } catch {
+        return false;
+    }
+}
+
+// 🔐 התחברות בלחיצה
+window.login = async function() {
+    await signInWithPopup(auth, provider);
+}
+
+// 🔓 התנתקות
+window.logout = async function() {
+    await signOut(auth);
+    userEmail = "";
+    isAdmin = false;
+    document.getElementById("app").style.display = "none";
+    document.getElementById("userInfo").innerText = "";
+    document.getElementById("loginBtn").style.display = "block";
+    document.getElementById("logoutBtn").style.display = "none";
+}
+
+// 👤 אחרי התחברות
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        userEmail = user.email;
+        isAdmin = await checkAdmin(userEmail);
+
+        // הצגת כפתור התנתקות והסתרת התחברות
+        document.getElementById("loginBtn").style.display = "none";
+        document.getElementById("logoutBtn").style.display = "block";
+
+        document.getElementById("app").style.display = "block";
+
+        loadItems();
+    }
+});
+
+// 📦 יצירת חפץ
+window.createItem = async function() {
+    const name = document.getElementById("name").value;
+    const message = document.getElementById("message").value;
+    const phone = document.getElementById("phone").value;
+    const email = document.getElementById("email").value;
+
+    const q = query(collection(db, "items"), where("owner", "==", userEmail));
+    const snapshot = await getDocs(q);
+
+    if (!isAdmin && snapshot.size >= 5) {
+        document.getElementById("status").innerText = "הגעת למקסימום 5 חפצים";
+        return;
+    }
+
+    const docRef = await addDoc(collection(db, "items"), {
+        name,
+        message,
+        phone,
+        email,
+        owner: userEmail
+    });
+
+    const link = "https://rb077858.github.io/qrfind/?id=" + docRef.id;
+
+    document.getElementById("status").innerHTML =
+        "נוצר! <br><a href='" + link + "' target='_blank'>" + link + "</a>";
+
+    loadItems();
+}
+
+// 📋 טעינת חפצים + חישוב כמה נשאר
+async function loadItems() {
+    const container = document.getElementById("items");
+    container.innerHTML = "";
+
+    const q = query(collection(db, "items"), where("owner", "==", userEmail));
+    const snapshot = await getDocs(q);
+
+    let remaining = isAdmin ? "∞" : (5 - snapshot.size);
+    document.getElementById("userInfo").innerText =
+        "מחובר כ: " + userEmail + " | נשאר לך ליצור: " + remaining;
+
+    snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+        const id = docSnap.id;
+
+        const link = "https://rb077858.github.io/qrfind/?id=" + id;
+
+        const div = document.createElement("div");
+        div.className = "item";
+
+        div.innerHTML = `
+            <b>${item.name}</b><br>
+            <a href="${link}" target="_blank">פתח</a>
+            <button class="delete" onclick="deleteItem('${id}')">מחק</button>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+// 🗑️ מחיקה
+window.deleteItem = async function(id) {
+    await deleteDoc(doc(db, "items", id));
+    loadItems();
+}
+</script>
+
+</body>
+</html>  messagingSenderId: "536499158176",
   appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
 
