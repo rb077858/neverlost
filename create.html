@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>יצירת חפצים עם QR</title>
- <!-- Google Tag Manager -->
+
+<!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-KQ64DLQZ');</script>
-<!-- End Google Tag Manager -->
 
 <style>
 body { font-family: Arial; background: linear-gradient(135deg, #74ebd5, #ACB6E5); margin:0; padding:15px;}
@@ -26,16 +26,19 @@ button { width:100%; padding:10px; border:none; border-radius:10px; background:#
 .qr-download { margin-top:5px; background:#28a745; }
 </style>
 </head>
+
 <body>
-    <!-- Google Tag Manager (noscript) -->
+
+<!-- GTM noscript -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KQ64DLQZ"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
+
 <div class="container">
 <h2>יצירת חפץ</h2>
 
 <button id="loginBtn" class="login" onclick="login()">🔐 התחבר עם Google</button>
 <button id="logoutBtn" class="logout" onclick="logout()" style="display:none;">🔓 התנתק</button>
+
 <div id="userInfo" class="info"></div>
 
 <div id="app" style="display:none;">
@@ -43,16 +46,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
     <input id="phone" placeholder="טלפון">
     <input id="email" placeholder="אימייל">
+
     <button onclick="createItem()">צור חפץ</button>
+
     <p id="status"></p>
     <div id="qrNew" class="qr-container"></div>
+
     <hr>
     <h3>החפצים שלי</h3>
     <div id="items"></div>
 </div>
 </div>
 
-<!-- ספריית QRCode.js -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <script type="module">
@@ -70,45 +75,90 @@ const firebaseConfig = {
   messagingSenderId: "536499158176",
   appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
 
 let userEmail = "";
-let isAdmin = false;
 
-async function checkAdmin(email) {
+// 🔥 מערכת pro.txt
+async function getUserLimit(email) {
     try {
-        const res = await fetch("admin.txt");
+        const res = await fetch("pro.txt");
         const text = await res.text();
-        const admins = text.split("\n").map(e=>e.trim());
-        return admins.includes(email);
-    } catch { return false; }
+
+        const lines = text.split("\n");
+        let total = 0;
+        let isUnlimited = false;
+
+        const today = new Date();
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+
+            const match = line.match(/^(.+?)\s*-\s*([^\s]+)(?:\s*\(([^)]+)\))?$/);
+            if (!match) return;
+
+            const userEmailLine = match[1].trim();
+            const value = match[2].trim();
+            const expiry = match[3];
+
+            if (userEmailLine !== email) return;
+
+            // בדיקת תוקף
+            if (expiry) {
+                const [day, month, year] = expiry.split(".");
+                const expiryDate = new Date(`${year}-${month}-${day}`);
+                if (expiryDate < today) return;
+            }
+
+            if (value === "+") {
+                isUnlimited = true;
+            } else {
+                total += parseInt(value) || 0;
+            }
+        });
+
+        if (isUnlimited) return Infinity;
+
+        return total > 0 ? total : 5;
+
+    } catch {
+        return 5;
+    }
 }
 
-window.login = async function() { await signInWithPopup(auth, provider); }
-window.logout = async function() {
-    await signOut(auth); userEmail=""; isAdmin=false;
+// התחברות
+window.login = async () => await signInWithPopup(auth, provider);
+
+// התנתקות
+window.logout = async () => {
+    await signOut(auth);
+    userEmail = "";
     document.getElementById("app").style.display="none";
-    document.getElementById("userInfo").innerText="";
     document.getElementById("loginBtn").style.display="block";
     document.getElementById("logoutBtn").style.display="none";
-}
+};
 
+// אחרי התחברות
 onAuthStateChanged(auth, async (user)=>{
     if(user){
-        userEmail=user.email;
-        isAdmin=await checkAdmin(userEmail);
+        userEmail = user.email;
+
         document.getElementById("loginBtn").style.display="none";
         document.getElementById("logoutBtn").style.display="block";
         document.getElementById("app").style.display="block";
+
         loadItems();
     }
 });
 
-// יצירת חפץ + QR
+// יצירת חפץ
 window.createItem = async function(){
+
     const name=document.getElementById("name").value;
     const message=document.getElementById("message").value;
     const phone=document.getElementById("phone").value;
@@ -116,47 +166,67 @@ window.createItem = async function(){
 
     const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
-    if(!isAdmin && snapshot.size>=5){
-        document.getElementById("status").innerText="הגעת למקסימום 5 חפצים"; return;
+
+    const limit = await getUserLimit(userEmail);
+
+    if (snapshot.size >= limit) {
+        document.getElementById("status").innerText =
+            "הגעת למקסימום תגים (" + (limit === Infinity ? "∞" : limit) + ")";
+        return;
     }
 
-    const docRef = await addDoc(collection(db,"items"), {name,message,phone,email,owner:userEmail});
-    const link = "https://rb077858.github.io/qrfind/?id="+docRef.id;
-    document.getElementById("status").innerHTML="נוצר! <br><a href='"+link+"' target='_blank'>"+link+"</a>";
+    const docRef = await addDoc(collection(db,"items"), {
+        name,message,phone,email,owner:userEmail
+    });
 
-    // QR אוטומטי אחרי יצירה
+    const link = "https://rb077858.github.io/qrfind/?id="+docRef.id;
+
+    document.getElementById("status").innerHTML =
+        "נוצר! <br><a href='"+link+"' target='_blank'>"+link+"</a>";
+
+    // QR חדש
     const qrDiv=document.getElementById("qrNew");
     qrDiv.innerHTML="";
+
     const canvas=document.createElement("canvas");
     qrDiv.appendChild(canvas);
-    QRCode.toCanvas(canvas, link, {width:200}, function(error){
-        if(error) console.error(error);
-    });
-    // כפתור הורדה
+
+    QRCode.toCanvas(canvas, link, {width:200});
+
     const btn=document.createElement("button");
     btn.innerText="⬇ הורד QR";
     btn.className="qr-download";
+
     btn.onclick=function(){
         const a=document.createElement("a");
         a.href=canvas.toDataURL("image/png");
         a.download=name+"_QR.png";
         a.click();
     };
+
     qrDiv.appendChild(btn);
 
     loadItems();
-}
+};
 
-// טעינת חפצים + QR להורדה לכל חפץ
+// טעינת חפצים
 async function loadItems(){
+
     const container=document.getElementById("items");
     container.innerHTML="";
+
     const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
-    let remaining=isAdmin?"∞":(5-snapshot.size);
-    document.getElementById("userInfo").innerText="מחובר כ: "+userEmail+" | נשאר לך ליצור: "+remaining;
+
+    const limit = await getUserLimit(userEmail);
+
+    let remaining = limit === Infinity ? "∞" : (limit - snapshot.size);
+
+    document.getElementById("userInfo").innerText =
+        "מחובר כ: " + userEmail + " | נשאר לך ליצור: " + remaining;
 
     snapshot.forEach(docSnap=>{
+
         const item=docSnap.data();
         const id=docSnap.id;
         const link="https://rb077858.github.io/qrfind/?id="+id;
@@ -164,9 +234,11 @@ async function loadItems(){
         const div=document.createElement("div");
         div.className="item";
 
-        // QR לכל חפץ
+        div.innerHTML="<b>"+item.name+"</b><br><a href='"+link+"' target='_blank'>פתח</a>";
+
         const canvas=document.createElement("canvas");
-        QRCode.toCanvas(canvas, link, {width:150}, function(err){if(err) console.error(err);});
+        QRCode.toCanvas(canvas, link, {width:150});
+        div.appendChild(canvas);
 
         const btn=document.createElement("button");
         btn.innerText="⬇ הורד QR";
@@ -177,15 +249,11 @@ async function loadItems(){
             a.download=item.name+"_QR.png";
             a.click();
         };
-
-        div.innerHTML="<b>"+item.name+"</b><br><a href='"+link+"' target='_blank'>פתח</a> ";
-        div.appendChild(canvas);
         div.appendChild(btn);
 
-        // כפתור מחיקה
         const delBtn=document.createElement("button");
-        delBtn.className="delete";
         delBtn.innerText="מחק";
+        delBtn.className="delete";
         delBtn.onclick=function(){ deleteItem(id); };
         div.appendChild(delBtn);
 
@@ -194,10 +262,11 @@ async function loadItems(){
 }
 
 // מחיקה
-window.deleteItem=async function(id){
+window.deleteItem = async function(id){
     await deleteDoc(doc(db,"items",id));
     loadItems();
-}
+};
 </script>
+
 </body>
 </html>
