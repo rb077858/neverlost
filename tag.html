@@ -8,7 +8,7 @@
 <style>
 body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+    background: #e0e5ec;
     margin: 0;
     padding: 15px;
     display: flex;
@@ -18,35 +18,37 @@ body {
 }
 
 .container {
-    background: white;
-    padding: 20px;
-    border-radius: 20px;
+    background: #e0e5ec;
+    padding: 30px;
+    border-radius: 25px;
     text-align: center;
     width: 100%;
     max-width: 400px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow:  20px 20px 60px #babecc,
+                 -20px -20px 60px #ffffff;
 }
 
 h1 {
     font-size: 22px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+    color: #333;
 }
 
 p {
     color: #555;
     font-size: 16px;
+    margin-bottom: 25px;
 }
 
 .buttons {
-    margin-top: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 15px;
 }
 
 .btn {
     padding: 14px;
-    border-radius: 15px;
+    border-radius: 20px;
     text-decoration: none;
     color: white;
     font-size: 17px;
@@ -54,10 +56,14 @@ p {
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: inset 4px 4px 10px #babecc,
+                inset -4px -4px 10px #ffffff;
+    transition: 0.2s;
 }
 
-.btn:active {
-    transform: scale(0.97);
+.btn:hover {
+    box-shadow: inset -4px -4px 10px #babecc,
+                inset 4px 4px 10px #ffffff;
 }
 
 .whatsapp { background: #25D366; }
@@ -84,7 +90,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, doc, getDoc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔥 שים כאן את הקונפיג שלך
+// 🔥 קונפיג Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyC6aKRxx0JkeBA7RjeZK23SkCLeO-zqXVU",
   authDomain: "lost-items-28167.firebaseapp.com",
@@ -93,7 +99,6 @@ const firebaseConfig = {
   messagingSenderId: "536499158176",
   appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -104,7 +109,7 @@ const id = params.get("id");
 
 if (!id) {
     document.getElementById("title").innerText = "❌ אין קוד";
-    throw new Error("No ID");
+    throw new Error("No ID provided");
 }
 
 // 📦 שליפת נתונים
@@ -115,31 +120,36 @@ if (docSnap.exists()) {
     const item = docSnap.data();
 
     // ✨ תוכן
-    document.getElementById("title").innerText =
-        "📦 מצאת את ה" + item.name + " שלי!";
-    document.getElementById("message").innerText =
-        item.message || "אשמח אם תחזיר 🙏";
+    document.getElementById("title").innerText = "📦 מצאת את ה" + item.name + " שלי!";
+    document.getElementById("message").innerText = item.message || "אשמח אם תחזיר 🙏";
 
     document.title = item.name;
 
-    // 📱 וואטסאפ עם טקסט דינמי
-    const text = encodeURIComponent(
-        "היי, מצאתי את ה" + item.name + " שלך!"
-    );
+    // 📱 וואטסאפ
+    const waText = encodeURIComponent("היי, מצאתי את ה" + item.name + " שלך!");
+    if(item.phone) {
+        const phoneWithoutZero = item.phone.startsWith("0") ? item.phone.substring(1) : item.phone;
+        document.getElementById("wa").href = "https://wa.me/972" + phoneWithoutZero + "?text=" + waText;
+        document.getElementById("phone").href = "tel:" + item.phone;
+    } else {
+        document.getElementById("wa").style.display = "none";
+        document.getElementById("phone").style.display = "none";
+    }
 
-    document.getElementById("wa").href =
-        "https://wa.me/972" + item.phone.substring(1) + "?text=" + text;
-
-    document.getElementById("phone").href =
-        "tel:" + item.phone;
-
-    document.getElementById("email").href =
-        "mailto:" + item.email;
+    if(item.email) {
+        document.getElementById("email").href = "mailto:" + item.email;
+    } else {
+        document.getElementById("email").style.display = "none";
+    }
 
 } else {
     document.getElementById("title").innerText = "❌ חפץ לא נמצא";
     document.getElementById("message").innerText = "ייתכן שהקוד שגוי";
     document.title = "שגיאה";
+
+    document.getElementById("wa").style.display = "none";
+    document.getElementById("phone").style.display = "none";
+    document.getElementById("email").style.display = "none";
 }
 </script>
 
