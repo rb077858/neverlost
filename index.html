@@ -33,6 +33,19 @@ body {
   background: #e0e5ec;
   box-shadow:  20px 20px 60px #babecc,
                -20px -20px 60px #ffffff;
+  transition: all 0.3s ease;
+}
+
+/* דפים פנימיים */
+.page {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.page.active {
+  display: block;
+  opacity: 1;
 }
 
 h1, h2 {
@@ -109,18 +122,34 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   <div id="userInfo" class="info"></div>
 
-  <div id="dashboard" style="display:none;">
+  <!-- דשבורד -->
+  <div id="dashboardPage" class="page">
     <div class="card" id="cardStats">
       <h2>סטטוס תגים</h2>
       <p id="statsInfo">טוען...</p>
     </div>
 
-    <a href="tag.html" class="nav-link">➕ צור חפץ חדש</a>
-    <a href="#" class="nav-link" onclick="window.location.reload();">🔄 רענן דשבורד</a>
+    <a href="#" class="nav-link" onclick="showPage('createPage')">➕ צור חפץ חדש</a>
+    <a href="#" class="nav-link" onclick="loadDashboard()">🔄 רענן דשבורד</a>
 
     <div class="card">
       <h2>החפצים שלי</h2>
       <div id="items"></div>
+    </div>
+  </div>
+
+  <!-- עמוד יצירת חפץ -->
+  <div id="createPage" class="page">
+    <div class="card">
+      <h2>צור חפץ חדש</h2>
+      <input id="name" placeholder="שם החפץ">
+      <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
+      <input id="phone" placeholder="טלפון">
+      <input id="email" placeholder="אימייל">
+      <button onclick="createItem()">צור חפץ</button>
+      <p id="status"></p>
+      <div id="qrNew" class="qr-container"></div>
+      <button onclick="showPage('dashboardPage')">⬅ חזור לדשבורד</button>
     </div>
   </div>
 </div>
@@ -129,7 +158,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, deleteDoc, doc } 
+import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -193,10 +222,18 @@ window.login = async () => await signInWithPopup(auth, provider);
 window.logout = async () => {
     await signOut(auth);
     userEmail = "";
-    document.getElementById("dashboard").style.display="none";
+    showPage(null); // הסתר הכל
     document.getElementById("loginBtn").style.display="block";
     document.getElementById("logoutBtn").style.display="none";
 };
+
+// הצגת עמוד פנימי עם אנימציה
+function showPage(id) {
+    document.querySelectorAll('.page').forEach(p=>{
+        p.classList.remove('active');
+    });
+    if(id) document.getElementById(id).classList.add('active');
+}
 
 // אחרי התחברות
 onAuthStateChanged(auth, async (user)=>{
@@ -204,19 +241,18 @@ onAuthStateChanged(auth, async (user)=>{
         userEmail = user.email;
         document.getElementById("loginBtn").style.display="none";
         document.getElementById("logoutBtn").style.display="block";
-        document.getElementById("dashboard").style.display="block";
+        showPage('dashboardPage');
         loadDashboard();
     }
 });
 
-// טעינת הדשבורד
+// טעינת דשבורד
 async function loadDashboard(){
     const itemsContainer = document.getElementById("items");
     itemsContainer.innerHTML = "";
     const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
     const limit = await getUserLimit(userEmail);
-
     let remaining = limit === Infinity ? "∞" : Math.max(0, limit - snapshot.size);
 
     document.getElementById("statsInfo").innerText =
@@ -246,7 +282,52 @@ async function loadDashboard(){
         itemsContainer.appendChild(div);
     });
 }
-</script>
 
+// יצירת חפץ
+window.createItem = async function(){
+    const name=document.getElementById("name").value;
+    const message=document.getElementById("message").value;
+    const phone=document.getElementById("phone").value;
+    const email=document.getElementById("email").value;
+
+    const q = query(collection(db,"items"), where("owner","==",userEmail));
+    const snapshot = await getDocs(q);
+    const limit = await getUserLimit(userEmail);
+
+    if (snapshot.size >= limit) {
+        document.getElementById("status").innerText =
+            "הגעת למקסימום תגים (" + (limit === Infinity ? "∞" : limit) + ")";
+        return;
+    }
+
+    const docRef = await addDoc(collection(db,"items"), {
+        name,message,phone,email,owner:userEmail
+    });
+
+    const link = `https://rb077858.github.io/neverlost/tag.html?id=${docRef.id}`;
+
+    document.getElementById("status").innerHTML =
+        "נוצר! <br><a href='"+link+"' target='_blank'>"+link+"</a>";
+
+    const qrDiv=document.getElementById("qrNew");
+    qrDiv.innerHTML="";
+    const canvas=document.createElement("canvas");
+    qrDiv.appendChild(canvas);
+    QRCode.toCanvas(canvas, link, {width:200});
+
+    const btn=document.createElement("button");
+    btn.innerText="⬇ הורד QR";
+    btn.className="qr-download";
+    btn.onclick=function(){
+        const a=document.createElement("a");
+        a.href=canvas.toDataURL("image/png");
+        a.download=name+"_QR.png";
+        a.click();
+    };
+    qrDiv.appendChild(btn);
+
+    loadDashboard();
+};
+</script>
 </body>
 </html>
