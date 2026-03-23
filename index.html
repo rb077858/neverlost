@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NeverLost - דשבורד</title>
-
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -16,7 +15,6 @@ body {
   align-items: flex-start;
   min-height: 100vh;
 }
-
 .container {
   max-width: 800px;
   width: 100%;
@@ -27,13 +25,7 @@ body {
   box-shadow:  20px 20px 60px #babecc,
                -20px -20px 60px #ffffff;
 }
-
-h1, h2 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
-}
-
+h1, h2 { text-align:center; color:#333; margin-bottom:20px; }
 .card {
   background: #e0e5ec;
   border-radius: 20px;
@@ -42,83 +34,62 @@ h1, h2 {
   box-shadow:  10px 10px 30px #babecc,
                -10px -10px 30px #ffffff;
 }
-
 button {
-  width: 100%;
-  padding: 12px;
+  padding: 10px;
   border: none;
   border-radius: 15px;
   background: #74b9ff;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  box-shadow: inset 2px 2px 5px #babecc,
-              inset -2px -2px 5px #ffffff;
-  transition: all 0.2s ease;
-  margin-top: 10px;
+  color:white;
+  cursor:pointer;
+  margin-top:5px;
 }
-
-button:hover {
-  box-shadow: inset -2px -2px 5px #babecc,
-              inset 2px 2px 5px #ffffff;
-}
-
+button:hover { background:#4aa0ff; }
 .login { background:#DB4437; }
 .logout { background:#555; }
-
 .info { font-size:16px; margin-bottom:15px; text-align:center; }
-
 input, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  font-size: 14px;
+  width:100%; padding:10px; margin-top:10px;
+  border-radius:10px; border:1px solid #ccc; font-size:14px;
 }
-
 .qr-container { margin-top:10px; text-align:center; }
 .qr-download { margin-top:5px; background:#28a745; color:white; border:none; border-radius:10px; padding:8px; cursor:pointer; }
-
 .hidden { display:none; }
 </style>
 </head>
-
 <body>
 <div class="container">
-  <h1>NeverLost Dashboard</h1>
+<h1>NeverLost Dashboard</h1>
 
-  <button id="loginBtn" class="login">🔐 התחבר עם Google</button>
-  <button id="logoutBtn" class="logout hidden">🔓 התנתק</button>
+<button id="loginBtn" class="login">🔐 התחבר עם Google</button>
+<button id="logoutBtn" class="logout hidden">🔓 התנתק</button>
 
-  <div id="userInfo" class="info hidden"></div>
+<div id="userInfo" class="info hidden"></div>
 
-  <div id="dashboardPage" class="hidden">
-    <div class="card" id="cardStats">
-      <h2>סטטוס תגים</h2>
-      <p id="statsInfo">טוען...</p>
-    </div>
-
-    <div class="card">
-      <h2>החפצים שלי</h2>
-      <div id="items"></div>
-    </div>
-
-    <div class="card">
-      <h2>צור חפץ חדש</h2>
-      <input id="name" placeholder="שם החפץ">
-      <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
-      <input id="phone" placeholder="טלפון">
-      <input id="email" placeholder="אימייל">
-      <button id="createBtn">➕ צור חפץ חדש</button>
-      <p id="status"></p>
-      <div id="qrNew" class="qr-container"></div>
-    </div>
+<div id="dashboardPage" class="hidden">
+  <div class="card" id="cardStats">
+    <h2>סטטוס תגים</h2>
+    <p id="statsInfo">טוען...</p>
   </div>
+
+  <div class="card">
+    <h2>החפצים שלי</h2>
+    <div id="items"></div>
+  </div>
+
+  <div class="card">
+    <h2>צור חפץ חדש</h2>
+    <input id="name" placeholder="שם החפץ">
+    <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
+    <input id="phone" placeholder="טלפון">
+    <input id="email" placeholder="אימייל">
+    <button id="createBtn">➕ צור חפץ חדש</button>
+    <p id="status"></p>
+    <div id="qrNew" class="qr-container"></div>
+  </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc } 
@@ -134,19 +105,46 @@ const firebaseConfig = {
   messagingSenderId: "536499158176",
   appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
-
 let userEmail = "";
+
+// מערכת pro.txt
+async function getUserLimit(email) {
+    try {
+        const res = await fetch("pro.txt");
+        const text = await res.text();
+        const lines = text.split("\n");
+        let total = 0, isUnlimited = false;
+        const today = new Date();
+        lines.forEach(line=>{
+            line = line.trim();
+            if(!line) return;
+            const match = line.match(/^(.+?)\s*-\s*([^\s]+)(?:\s*\(([^)]+)\))?$/);
+            if(!match) return;
+            const userEmailLine = match[1].trim();
+            const value = match[2].trim();
+            const expiry = match[3];
+            if(userEmailLine!==email) return;
+            if(expiry){
+                const [day, month, year] = expiry.split(".");
+                const expiryDate = new Date(`${year}-${month}-${day}`);
+                if(expiryDate < today) return;
+            }
+            if(value==='+') isUnlimited=true; else total+=parseInt(value)||0;
+        });
+        if(isUnlimited) return Infinity;
+        return total>0? total:5;
+    } catch { return 5; }
+}
 
 // התחברות/התנתקות
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 loginBtn.onclick = async ()=> await signInWithPopup(auth, provider);
-logoutBtn.onclick = async ()=> {
+logoutBtn.onclick = async ()=>{
     await signOut(auth);
     userEmail="";
     document.getElementById("dashboardPage").classList.add("hidden");
@@ -163,7 +161,6 @@ onAuthStateChanged(auth, async user=>{
         logoutBtn.classList.remove("hidden");
         document.getElementById("dashboardPage").classList.remove("hidden");
         document.getElementById("userInfo").classList.remove("hidden");
-        document.getElementById("userInfo").innerText = `מחובר כ: ${userEmail}`;
         loadDashboard();
     }
 });
@@ -171,29 +168,39 @@ onAuthStateChanged(auth, async user=>{
 // טעינת דשבורד
 async function loadDashboard(){
     const itemsContainer = document.getElementById("items");
-    itemsContainer.innerHTML = "";
-
+    itemsContainer.innerHTML="";
     const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
+    const limit = await getUserLimit(userEmail);
+    const remaining = limit===Infinity?"∞":Math.max(0, limit-snapshot.size);
 
-    document.getElementById("statsInfo").innerText = `נמצאו חפצים: ${snapshot.size}`;
+    document.getElementById("statsInfo").innerText=`מחובר כ: ${userEmail}\nנשאר ליצור: ${remaining}`;
 
     snapshot.forEach(docSnap=>{
         const item = docSnap.data();
         const id = docSnap.id;
         const link = `https://rb077858.github.io/neverlost/tag.html?id=${id}`;
-
         const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `<b>${item.name}</b><br><a href="${link}" target="_blank">פתח</a>`;
+        div.className="card";
+        div.innerHTML=`<b>${item.name}</b><br><a href="${link}" target="_blank">פתח</a>`;
 
         const canvas = document.createElement("canvas");
         QRCode.toCanvas(canvas, link, {width:150});
         div.appendChild(canvas);
 
+        const downloadBtn = document.createElement("button");
+        downloadBtn.innerText="⬇ הורד QR";
+        downloadBtn.onclick=()=> {
+            const a=document.createElement("a");
+            a.href=canvas.toDataURL("image/png");
+            a.download=item.name+"_QR.png";
+            a.click();
+        };
+        div.appendChild(downloadBtn);
+
         const delBtn = document.createElement("button");
-        delBtn.innerText = "מחק";
-        delBtn.onclick = async function() {
+        delBtn.innerText="מחק";
+        delBtn.onclick=async ()=> {
             await deleteDoc(doc(db,"items",id));
             loadDashboard();
         };
@@ -203,31 +210,33 @@ async function loadDashboard(){
     });
 }
 
-// יצירת חפץ
-document.getElementById("createBtn").onclick = async function(){
+// יצירת חפץ חדש
+document.getElementById("createBtn").onclick=async function(){
     if(!userEmail) return alert("עליך להתחבר לפני יצירת חפץ!");
+    const name=document.getElementById("name").value;
+    const message=document.getElementById("message").value;
+    const phone=document.getElementById("phone").value;
+    const email=document.getElementById("email").value;
 
-    const name = document.getElementById("name").value;
-    const message = document.getElementById("message").value;
-    const phone = document.getElementById("phone").value;
-    const email = document.getElementById("email").value;
+    const limit = await getUserLimit(userEmail);
+    const q = query(collection(db,"items"), where("owner","==",userEmail));
+    const snapshot = await getDocs(q);
+    if(snapshot.size>=limit){
+        document.getElementById("status").innerText=`הגעת למקסימום תגים (${limit===Infinity?"∞":limit})`;
+        return;
+    }
 
-    const docRef = await addDoc(collection(db,"items"), {
-        name,message,phone,email,owner:userEmail
-    });
-
+    const docRef = await addDoc(collection(db,"items"), {name,message,phone,email,owner:userEmail});
     const link = `https://rb077858.github.io/neverlost/tag.html?id=${docRef.id}`;
+    document.getElementById("status").innerHTML=`נוצר! <br><a href='${link}' target="_blank">${link}</a>`;
 
-    document.getElementById("status").innerHTML =
-        "נוצר! <br><a href='"+link+"' target='_blank'>"+link+"</a>";
-
-    const qrDiv = document.getElementById("qrNew");
+    const qrDiv=document.getElementById("qrNew");
     qrDiv.innerHTML="";
-    const canvas = document.createElement("canvas");
+    const canvas=document.createElement("canvas");
     qrDiv.appendChild(canvas);
     QRCode.toCanvas(canvas, link, {width:200});
 
-    const btn = document.createElement("button");
+    const btn=document.createElement("button");
     btn.innerText="⬇ הורד QR";
     btn.className="qr-download";
     btn.onclick=function(){
