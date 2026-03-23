@@ -68,26 +68,6 @@ button:hover {
 
 .info { font-size:16px; margin-bottom:15px; text-align:center; }
 
-.nav-link {
-  display: block;
-  text-align: center;
-  text-decoration: none;
-  margin: 10px 0;
-  font-weight: bold;
-  color: #333;
-  padding: 10px;
-  border-radius: 15px;
-  box-shadow: 5px 5px 15px #babecc,
-             -5px -5px 15px #ffffff;
-  background: #e0e5ec;
-  transition: 0.2s;
-}
-
-.nav-link:hover {
-  box-shadow: inset 5px 5px 15px #babecc,
-              inset -5px -5px 15px #ffffff;
-}
-
 input, textarea {
   width: 100%;
   padding: 10px;
@@ -99,6 +79,8 @@ input, textarea {
 
 .qr-container { margin-top:10px; text-align:center; }
 .qr-download { margin-top:5px; background:#28a745; color:white; border:none; border-radius:10px; padding:8px; cursor:pointer; }
+
+.hidden { display:none; }
 </style>
 </head>
 
@@ -106,18 +88,16 @@ input, textarea {
 <div class="container">
   <h1>NeverLost Dashboard</h1>
 
-  <button id="loginBtn" class="login" onclick="login()">🔐 התחבר עם Google</button>
-  <button id="logoutBtn" class="logout" onclick="logout()" style="display:none;">🔓 התנתק</button>
+  <button id="loginBtn" class="login">🔐 התחבר עם Google</button>
+  <button id="logoutBtn" class="logout hidden">🔓 התנתק</button>
 
-  <div id="userInfo" class="info"></div>
+  <div id="userInfo" class="info hidden"></div>
 
-  <div id="dashboardPage">
+  <div id="dashboardPage" class="hidden">
     <div class="card" id="cardStats">
       <h2>סטטוס תגים</h2>
       <p id="statsInfo">טוען...</p>
     </div>
-
-    <button class="nav-link" onclick="loadDashboard()">🔄 רענן דשבורד</button>
 
     <div class="card">
       <h2>החפצים שלי</h2>
@@ -130,7 +110,7 @@ input, textarea {
       <textarea id="message" placeholder="טקסט שהמוצא יראה"></textarea>
       <input id="phone" placeholder="טלפון">
       <input id="email" placeholder="אימייל">
-      <button onclick="createItem()">➕ צור חפץ חדש</button>
+      <button id="createBtn">➕ צור חפץ חדש</button>
       <p id="status"></p>
       <div id="qrNew" class="qr-container"></div>
     </div>
@@ -162,23 +142,28 @@ const provider = new GoogleAuthProvider();
 
 let userEmail = "";
 
-// התחברות וההתנתקות
-window.login = async () => await signInWithPopup(auth, provider);
-window.logout = async () => {
+// התחברות/התנתקות
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+loginBtn.onclick = async ()=> await signInWithPopup(auth, provider);
+logoutBtn.onclick = async ()=> {
     await signOut(auth);
-    userEmail = "";
-    document.getElementById("dashboardPage").style.display="none";
-    document.getElementById("loginBtn").style.display="block";
-    document.getElementById("logoutBtn").style.display="none";
+    userEmail="";
+    document.getElementById("dashboardPage").classList.add("hidden");
+    document.getElementById("userInfo").classList.add("hidden");
+    loginBtn.classList.remove("hidden");
+    logoutBtn.classList.add("hidden");
 };
 
 // אחרי התחברות
-onAuthStateChanged(auth, async (user)=>{
+onAuthStateChanged(auth, async user=>{
     if(user){
         userEmail = user.email;
-        document.getElementById("loginBtn").style.display="none";
-        document.getElementById("logoutBtn").style.display="block";
-        document.getElementById("dashboardPage").style.display="block";
+        loginBtn.classList.add("hidden");
+        logoutBtn.classList.remove("hidden");
+        document.getElementById("dashboardPage").classList.remove("hidden");
+        document.getElementById("userInfo").classList.remove("hidden");
+        document.getElementById("userInfo").innerText = `מחובר כ: ${userEmail}`;
         loadDashboard();
     }
 });
@@ -187,8 +172,11 @@ onAuthStateChanged(auth, async (user)=>{
 async function loadDashboard(){
     const itemsContainer = document.getElementById("items");
     itemsContainer.innerHTML = "";
+
     const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
+
+    document.getElementById("statsInfo").innerText = `נמצאו חפצים: ${snapshot.size}`;
 
     snapshot.forEach(docSnap=>{
         const item = docSnap.data();
@@ -216,11 +204,13 @@ async function loadDashboard(){
 }
 
 // יצירת חפץ
-window.createItem = async function(){
-    const name=document.getElementById("name").value;
-    const message=document.getElementById("message").value;
-    const phone=document.getElementById("phone").value;
-    const email=document.getElementById("email").value;
+document.getElementById("createBtn").onclick = async function(){
+    if(!userEmail) return alert("עליך להתחבר לפני יצירת חפץ!");
+
+    const name = document.getElementById("name").value;
+    const message = document.getElementById("message").value;
+    const phone = document.getElementById("phone").value;
+    const email = document.getElementById("email").value;
 
     const docRef = await addDoc(collection(db,"items"), {
         name,message,phone,email,owner:userEmail
@@ -231,13 +221,13 @@ window.createItem = async function(){
     document.getElementById("status").innerHTML =
         "נוצר! <br><a href='"+link+"' target='_blank'>"+link+"</a>";
 
-    const qrDiv=document.getElementById("qrNew");
+    const qrDiv = document.getElementById("qrNew");
     qrDiv.innerHTML="";
-    const canvas=document.createElement("canvas");
+    const canvas = document.createElement("canvas");
     qrDiv.appendChild(canvas);
     QRCode.toCanvas(canvas, link, {width:200});
 
-    const btn=document.createElement("button");
+    const btn = document.createElement("button");
     btn.innerText="⬇ הורד QR";
     btn.className="qr-download";
     btn.onclick=function(){
@@ -248,7 +238,7 @@ window.createItem = async function(){
     };
     qrDiv.appendChild(btn);
 
-    loadDashboard(); // עדכון רשימת החפצים
+    loadDashboard();
 };
 </script>
 </body>
