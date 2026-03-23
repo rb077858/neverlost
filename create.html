@@ -29,7 +29,6 @@ button { width:100%; padding:10px; border:none; border-radius:10px; background:#
 
 <body>
 
-<!-- GTM noscript -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KQ64DLQZ"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
@@ -83,7 +82,7 @@ const provider = new GoogleAuthProvider();
 
 let userEmail = "";
 
-// 🔥 מערכת pro.txt
+// מערכת pro.txt
 async function getUserLimit(email) {
     try {
         const res = await fetch("pro.txt");
@@ -92,7 +91,6 @@ async function getUserLimit(email) {
         const lines = text.split("\n");
         let total = 0;
         let isUnlimited = false;
-
         const today = new Date();
 
         lines.forEach(line => {
@@ -108,7 +106,6 @@ async function getUserLimit(email) {
 
             if (userEmailLine !== email) return;
 
-            // בדיקת תוקף
             if (expiry) {
                 const [day, month, year] = expiry.split(".");
                 const expiryDate = new Date(`${year}-${month}-${day}`);
@@ -147,11 +144,9 @@ window.logout = async () => {
 onAuthStateChanged(auth, async (user)=>{
     if(user){
         userEmail = user.email;
-
         document.getElementById("loginBtn").style.display="none";
         document.getElementById("logoutBtn").style.display="block";
         document.getElementById("app").style.display="block";
-
         loadItems();
     }
 });
@@ -184,19 +179,16 @@ window.createItem = async function(){
     document.getElementById("status").innerHTML =
         "נוצר! <br><a href='"+link+"' target='_blank'>"+link+"</a>";
 
-    // QR חדש
     const qrDiv=document.getElementById("qrNew");
     qrDiv.innerHTML="";
 
     const canvas=document.createElement("canvas");
     qrDiv.appendChild(canvas);
-
     QRCode.toCanvas(canvas, link, {width:200});
 
     const btn=document.createElement("button");
     btn.innerText="⬇ הורד QR";
     btn.className="qr-download";
-
     btn.onclick=function(){
         const a=document.createElement("a");
         a.href=canvas.toDataURL("image/png");
@@ -220,13 +212,17 @@ async function loadItems(){
 
     const limit = await getUserLimit(userEmail);
 
-    let remaining = limit === Infinity ? "∞" : (limit - snapshot.size);
+    let remaining;
+    if (limit === Infinity) {
+        remaining = "∞";
+    } else {
+        remaining = Math.max(0, limit - snapshot.size); // 🔥 כאן התיקון
+    }
 
     document.getElementById("userInfo").innerText =
         "מחובר כ: " + userEmail + " | נשאר לך ליצור: " + remaining;
 
     snapshot.forEach(docSnap=>{
-
         const item=docSnap.data();
         const id=docSnap.id;
         const link="https://rb077858.github.io/qrfind/?id="+id;
