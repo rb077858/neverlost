@@ -207,10 +207,10 @@ onAuthStateChanged(auth, async (user)=>{
 // יצירה
 window.createItem = async function(){
 
-    const name=nameInput.value;
-    const message=messageInput.value;
-    const phone=phoneInput.value;
-    const email=emailInput.value;
+    const name = document.getElementById("name").value;
+    const message = document.getElementById("message").value;
+    const phone = document.getElementById("phone").value;
+    const email = document.getElementById("email").value;
 
     const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
