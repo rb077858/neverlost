@@ -4,14 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NeverLost</title>
-  <link rel="icon" type="image/png" href="assets/logo.png">
 
 <style>
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #e0e5ec;
   margin: 0;
-  padding: 0;
 }
 
 .container {
@@ -20,62 +18,52 @@ body {
   padding: 20px;
 }
 
-/* לוגו */
 .logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  margin-bottom:20px;
 }
+.logo img { width:50px; }
+.logo h1 { margin:0; }
 
-.logo img {
-  width: 50px;
-  height: 50px;
-}
-
-.logo h1 {
-  margin: 0;
-  font-size: 28px;
-}
-
-/* כרטיסים */
 .card {
-  background: #e0e5ec;
-  border-radius: 20px;
-  padding: 20px;
-  margin: 15px 0;
-  box-shadow: 10px 10px 30px #babecc,
-              -10px -10px 30px #ffffff;
+  background:#e0e5ec;
+  border-radius:20px;
+  padding:20px;
+  margin:15px 0;
+  box-shadow:10px 10px 30px #babecc,
+             -10px -10px 30px #ffffff;
 }
 
 input, textarea {
-  width: 100%;
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 10px;
-  border: none;
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:10px;
+  border:none;
 }
 
 button {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  margin-top: 10px;
-  background: #74b9ff;
-  color: white;
-  cursor: pointer;
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  color:white;
 }
 
 .login { background:#DB4437; }
 .logout { background:#555; }
-.delete { background:red; }
-.download { background:#28a745; }
+.create { background:#0984e3; }
+.download { background:#00b894; }
+.delete { background:#d63031; }
 
 .info {
-  text-align: center;
-  margin-bottom: 10px;
+  text-align:center;
+  margin-bottom:10px;
 }
 </style>
 </head>
@@ -84,36 +72,34 @@ button {
 
 <div class="container">
 
-  <!-- 🔥 לוגו -->
   <div class="logo">
     <img src="logo.png">
     <h1>NeverLost</h1>
   </div>
 
-  <button id="loginBtn" class="login" onclick="login()">🔐 התחבר עם Google</button>
-  <button id="logoutBtn" class="logout" onclick="logout()" style="display:none;">🔓 התנתק</button>
+  <button id="loginBtn" class="login">🔐 התחבר עם Google</button>
+  <button id="logoutBtn" class="logout" style="display:none;">🔓 התנתק</button>
 
   <div id="userInfo" class="info"></div>
 
-  <!-- טופס -->
   <div id="app" style="display:none;">
 
     <div class="card">
-      <h2>צור חפץ חדש</h2>
+      <h2>צור תג חדש</h2>
 
       <input id="name" placeholder="שם החפץ">
       <textarea id="message" placeholder="טקסט למוצא"></textarea>
       <input id="phone" placeholder="טלפון">
       <input id="email" placeholder="אימייל">
 
-      <button onclick="createItem()">➕ צור חפץ</button>
+      <button id="createBtn" class="create">➕ צור תג</button>
 
       <p id="status"></p>
       <div id="qrNew"></div>
     </div>
 
     <div class="card">
-      <h2>החפצים שלי</h2>
+      <h2>התגים שלי</h2>
       <div id="items"></div>
     </div>
 
@@ -139,6 +125,7 @@ const firebaseConfig = {
   appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
 
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth();
@@ -146,18 +133,17 @@ const provider = new GoogleAuthProvider();
 
 let userEmail = "";
 
-// מערכת pro.txt
-async function getUserLimit(email) {
-    try {
+// 🔥 LIMIT SYSTEM
+async function getUserLimit(email){
+    try{
         const res = await fetch("pro.txt");
         const text = await res.text();
-        const lines = text.split("\n");
 
         let total = 0;
         let unlimited = false;
         const today = new Date();
 
-        lines.forEach(line=>{
+        text.split("\n").forEach(line=>{
             const match = line.match(/^(.+?)\s*-\s*([^\s]+)(?:\(([^)]+)\))?$/);
             if(!match) return;
 
@@ -179,38 +165,48 @@ async function getUserLimit(email) {
         if(unlimited) return Infinity;
         return total>0?total:5;
 
-    } catch { return 5; }
+    }catch{
+        return 5;
+    }
 }
 
-// התחברות
-window.login = async ()=> await signInWithPopup(auth, provider);
+// LOGIN
+loginBtn.onclick = ()=> signInWithPopup(auth, provider);
 
-// התנתקות
-window.logout = async ()=>{
+// LOGOUT
+logoutBtn.onclick = async ()=>{
     await signOut(auth);
-    document.getElementById("app").style.display="none";
-    document.getElementById("loginBtn").style.display="block";
-    document.getElementById("logoutBtn").style.display="none";
 };
 
-// אחרי התחברות
-onAuthStateChanged(auth, async (user)=>{
+// AUTH STATE
+onAuthStateChanged(auth, async user=>{
     if(user){
         userEmail = user.email;
-        document.getElementById("app").style.display="block";
-        document.getElementById("loginBtn").style.display="none";
-        document.getElementById("logoutBtn").style.display="block";
+
+        loginBtn.style.display="none";
+        logoutBtn.style.display="block";
+        appDiv.style.display="block";
+
         loadItems();
+    } else {
+        loginBtn.style.display="block";
+        logoutBtn.style.display="none";
+        appDiv.style.display="none";
     }
 });
 
-// יצירה
-window.createItem = async function(){
+// CREATE
+createBtn.onclick = async ()=>{
 
-    const name = document.getElementById("name").value;
-    const message = document.getElementById("message").value;
-    const phone = document.getElementById("phone").value;
-    const email = document.getElementById("email").value;
+    const name = nameInput.value;
+    const message = messageInput.value;
+    const phone = phoneInput.value;
+    const email = emailInput.value;
+
+    if(!name || !phone){
+        status.innerText="מלא שם וטלפון";
+        return;
+    }
 
     const q = query(collection(db,"items"), where("owner","==",userEmail));
     const snapshot = await getDocs(q);
@@ -228,30 +224,37 @@ window.createItem = async function(){
 
     const link = `https://rb077858.github.io/neverlost/tag.html?id=${docRef.id}`;
 
-    status.innerHTML=`נוצר! <br><a href="${link}" target="_blank">פתח</a>`;
+    status.innerHTML = `✅ נוצר!<br><a href="${link}" target="_blank">פתח</a>`;
 
     // QR
     qrNew.innerHTML="";
     const canvas=document.createElement("canvas");
     qrNew.appendChild(canvas);
-    QRCode.toCanvas(canvas, link);
+    await QRCode.toCanvas(canvas, link, {width:200});
 
-    const btn=document.createElement("button");
-    btn.innerText="⬇ הורד QR";
-    btn.className="download";
-    btn.onclick=()=>{
+    const dl=document.createElement("button");
+    dl.innerText="⬇ הורד QR";
+    dl.className="download";
+    dl.onclick=()=>{
         const a=document.createElement("a");
         a.href=canvas.toDataURL();
         a.download=name+".png";
         a.click();
     };
-    qrNew.appendChild(btn);
+    qrNew.appendChild(dl);
+
+    // reset
+    nameInput.value="";
+    messageInput.value="";
+    phoneInput.value="";
+    emailInput.value="";
 
     loadItems();
 };
 
-// טעינה
+// LOAD ITEMS
 async function loadItems(){
+
     items.innerHTML="";
 
     const q = query(collection(db,"items"), where("owner","==",userEmail));
@@ -260,7 +263,7 @@ async function loadItems(){
     const limit = await getUserLimit(userEmail);
     const remaining = limit===Infinity?"∞":Math.max(0, limit - snapshot.size);
 
-    userInfo.innerText=`${userEmail} | נשאר: ${remaining}`;
+    userInfo.innerText = `${userEmail} | נשאר: ${remaining}`;
 
     snapshot.forEach(docSnap=>{
         const item=docSnap.data();
@@ -290,7 +293,7 @@ async function loadItems(){
         const del=document.createElement("button");
         del.innerText="מחק";
         del.className="delete";
-        del.onclick=async()=>{
+        del.onclick=async ()=>{
             await deleteDoc(doc(db,"items",id));
             loadItems();
         };
