@@ -3,94 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>טוען...</title>
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="logo.png">
+<title>NeverLost | טוען...</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 
 <style>
+:root{
+  --bg-1:#eef1fb;
+  --bg-2:#e4e9fb;
+  --surface:#ffffff;
+  --text:#1c1f33;
+  --text-muted:#666c8a;
+  --border:#e4e7f5;
+  --primary:#4f46e5;
+  --primary-soft:#eef0ff;
+  --shadow-md:0 10px 30px rgba(49,46,129,.10);
+  --shadow-lg:0 20px 45px rgba(49,46,129,.16);
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg-1:#0f1120;
+    --bg-2:#161a30;
+    --surface:#1b1f38;
+    --text:#eef0ff;
+    --text-muted:#9aa0c4;
+    --border:#2b3160;
+    --primary:#7c78ff;
+    --primary-soft:#262b52;
+    --shadow-md:0 10px 30px rgba(0,0,0,.35);
+    --shadow-lg:0 20px 45px rgba(0,0,0,.45);
+  }
+}
+
+*{ box-sizing:border-box; }
+
 body {
-    font-family: Arial, sans-serif;
-    background: #e0e5ec;
+    font-family:'Heebo', Arial, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, var(--bg-2), transparent),
+      radial-gradient(900px 500px at 110% 10%, var(--primary-soft), transparent),
+      var(--bg-1);
+    color:var(--text);
     margin: 0;
-    padding: 15px;
+    padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    -webkit-font-smoothing:antialiased;
 }
 
 .container {
-    background: #e0e5ec;
-    padding: 30px;
-    border-radius: 25px;
+    background: var(--surface);
+    border:1px solid var(--border);
+    padding: 36px 28px 28px;
+    border-radius: 24px;
     text-align: center;
     width: 100%;
     max-width: 400px;
-    box-shadow:  20px 20px 60px #babecc,
-                 -20px -20px 60px #ffffff;
+    box-shadow: var(--shadow-lg);
+    animation: pop .35s ease both;
+}
+@keyframes pop{ from{opacity:0; transform:translateY(10px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+
+.emoji-badge{
+  width:64px; height:64px;
+  border-radius:20px;
+  background:var(--primary-soft);
+  display:flex; align-items:center; justify-content:center;
+  font-size:30px;
+  margin:0 auto 16px;
 }
 
 h1 {
-    font-size: 22px;
-    margin-bottom: 15px;
-    color: #333;
+    font-size: 21px;
+    font-weight:800;
+    margin: 0 0 10px;
+    line-height:1.5;
 }
 
-p {
-    color: #555;
-    font-size: 16px;
-    margin-bottom: 25px;
+p#message {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height:1.7;
+    margin: 0 0 26px;
 }
 
 .buttons {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
 }
 
 .btn {
-    padding: 14px;
-    border-radius: 20px;
+    padding: 15px;
+    border-radius: 14px;
     text-decoration: none;
     color: white;
-    font-size: 17px;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 700;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: inset 4px 4px 10px #babecc,
-                inset -4px -4px 10px #ffffff;
-    transition: 0.2s;
+    gap:8px;
+    box-shadow:0 8px 20px rgba(0,0,0,.12);
+    transition: transform .15s ease, filter .15s ease;
 }
 
 .btn:hover {
-    box-shadow: inset -4px -4px 10px #babecc,
-                inset 4px 4px 10px #ffffff;
+    transform:translateY(-2px);
+    filter:brightness(1.05);
 }
+.btn:active{ transform:translateY(0); }
 
-.whatsapp { background: #25D366; }
-.phone { background: #007BFF; }
-.email { background: #FF6B6B; }
+.whatsapp { background: linear-gradient(135deg,#25D366,#128c46); }
+.phone { background: linear-gradient(135deg,#4f8bff,#1d5fe0); }
+.email { background: linear-gradient(135deg,#ff7676,#e0392f); }
+
+.skeleton-line{
+  height:16px;
+  border-radius:8px;
+  margin:0 auto 10px;
+  background:linear-gradient(90deg, var(--border) 25%, var(--primary-soft) 37%, var(--border) 63%);
+  background-size:400% 100%;
+  animation:shimmer 1.4s ease infinite;
+}
+@keyframes shimmer{ 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+
+footer{
+  margin-top:24px;
+  font-size:12px;
+  color:var(--text-muted);
+}
+footer a{ color:var(--primary); text-decoration:none; font-weight:600; }
+footer a:hover{ text-decoration:underline; }
 </style>
 </head>
 
 <body>
 
 <div class="container">
-    <h1 id="title">טוען...</h1>
+    <div class="emoji-badge" id="badge">📦</div>
+    <h1 id="title">טוען פרטי התג...</h1>
     <p id="message"></p>
 
     <div class="buttons">
-        <a id="wa" class="btn whatsapp">💬 שלח וואטסאפ</a>
-        <a id="phone" class="btn phone">📞 התקשר</a>
-        <a id="email" class="btn email">✉️ שלח מייל</a>
+        <a id="wa" class="btn whatsapp" style="display:none;">💬 שלח וואטסאפ</a>
+        <a id="phoneBtn" class="btn phone" style="display:none;">📞 התקשר</a>
+        <a id="emailBtn" class="btn email" style="display:none;">✉️ שלח מייל</a>
     </div>
+
+    <footer>מופעל באמצעות <a href="index.html">NeverLost</a></footer>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc } 
+import { getFirestore, doc, getDoc }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔥 קונפיג Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyC6aKRxx0JkeBA7RjeZK23SkCLeO-zqXVU",
   authDomain: "lost-items-28167.firebaseapp.com",
@@ -103,53 +178,62 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🔍 קבלת ID מהקישור
+const badgeEl = document.getElementById("badge");
+const titleEl = document.getElementById("title");
+const messageEl = document.getElementById("message");
+const waEl = document.getElementById("wa");
+const phoneEl = document.getElementById("phoneBtn");
+const emailEl = document.getElementById("emailBtn");
+
+function showError(title, msg){
+    badgeEl.innerText = "❌";
+    titleEl.innerText = title;
+    messageEl.innerText = msg;
+    document.title = "NeverLost | " + title;
+}
+
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
 if (!id) {
-    document.getElementById("title").innerText = "❌ אין קוד";
-    throw new Error("No ID provided");
-}
-
-// 📦 שליפת נתונים
-const docRef = doc(db, "items", id);
-const docSnap = await getDoc(docRef);
-
-if (docSnap.exists()) {
-    const item = docSnap.data();
-
-    // ✨ תוכן
-    document.getElementById("title").innerText = "📦 מצאת את ה" + item.name + " שלי!";
-    document.getElementById("message").innerText = item.message || "אשמח אם תחזיר 🙏";
-
-    document.title = item.name;
-
-    // 📱 וואטסאפ
-    const waText = encodeURIComponent("היי, מצאתי את ה" + item.name + " שלך!");
-    if(item.phone) {
-        const phoneWithoutZero = item.phone.startsWith("0") ? item.phone.substring(1) : item.phone;
-        document.getElementById("wa").href = "https://wa.me/972" + phoneWithoutZero + "?text=" + waText;
-        document.getElementById("phone").href = "tel:" + item.phone;
-    } else {
-        document.getElementById("wa").style.display = "none";
-        document.getElementById("phone").style.display = "none";
-    }
-
-    if(item.email) {
-        document.getElementById("email").href = "mailto:" + item.email;
-    } else {
-        document.getElementById("email").style.display = "none";
-    }
-
+    showError("אין קוד תג", "כתובת הקישור לא תקינה, חסר מזהה תג.");
 } else {
-    document.getElementById("title").innerText = "❌ חפץ לא נמצא";
-    document.getElementById("message").innerText = "ייתכן שהקוד שגוי";
-    document.title = "שגיאה";
+    try{
+        const docRef = doc(db, "items", id);
+        const docSnap = await getDoc(docRef);
 
-    document.getElementById("wa").style.display = "none";
-    document.getElementById("phone").style.display = "none";
-    document.getElementById("email").style.display = "none";
+        if (docSnap.exists()) {
+            const item = docSnap.data();
+
+            badgeEl.innerText = "📦";
+            titleEl.innerText = "מצאת את ה" + item.name + " שלי!";
+            messageEl.innerText = item.message || "אשמח אם תחזיר 🙏";
+            document.title = "NeverLost | " + item.name;
+
+            const waText = encodeURIComponent("היי, מצאתי את ה" + item.name + " שלך!");
+            if(item.phone){
+                const phoneWithoutZero = item.phone.startsWith("0") ? item.phone.substring(1) : item.phone;
+                waEl.href = "https://wa.me/972" + phoneWithoutZero + "?text=" + waText;
+                waEl.style.display = "flex";
+                phoneEl.href = "tel:" + item.phone;
+                phoneEl.style.display = "flex";
+            }
+
+            if(item.email){
+                emailEl.href = "mailto:" + item.email;
+                emailEl.style.display = "flex";
+            }
+
+            if(!item.phone && !item.email){
+                messageEl.innerText += " (לא הוגדרו פרטי יצירת קשר)";
+            }
+        } else {
+            showError("חפץ לא נמצא", "ייתכן שהקוד שגוי או שהתג נמחק.");
+        }
+    }catch(err){
+        console.error(err);
+        showError("שגיאה בטעינה", "לא הצלחנו לטעון את פרטי התג, נסו שוב מאוחר יותר.");
+    }
 }
 </script>
 

@@ -3,67 +3,327 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NeverLost</title>
+<meta name="description" content="NeverLost - צרו תגי QR חכמים לחפצים שלכם, כדי שמי שמוצא אותם ידע איך להחזיר לכם.">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="logo.png">
+<title>NeverLost | תגי QR לחפצים אבודים</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 
 <style>
+:root{
+  --bg-1:#eef1fb;
+  --bg-2:#e4e9fb;
+  --surface:#ffffff;
+  --surface-soft:#f4f6fd;
+  --text:#1c1f33;
+  --text-muted:#666c8a;
+  --border:#e4e7f5;
+  --primary:#4f46e5;
+  --primary-dark:#3730a3;
+  --primary-soft:#eef0ff;
+  --danger:#e53957;
+  --danger-soft:#fdeaee;
+  --success:#12b886;
+  --success-soft:#e6faf4;
+  --warn:#f59f00;
+  --shadow-sm:0 2px 8px rgba(31,41,55,.06);
+  --shadow-md:0 10px 30px rgba(49,46,129,.10);
+  --shadow-lg:0 20px 45px rgba(49,46,129,.16);
+  --radius:18px;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg-1:#0f1120;
+    --bg-2:#161a30;
+    --surface:#1b1f38;
+    --surface-soft:#20264a;
+    --text:#eef0ff;
+    --text-muted:#9aa0c4;
+    --border:#2b3160;
+    --primary:#7c78ff;
+    --primary-dark:#a5a2ff;
+    --primary-soft:#262b52;
+    --danger:#ff6b81;
+    --danger-soft:#3a1f2b;
+    --success:#3ddba0;
+    --success-soft:#153a30;
+    --shadow-sm:0 2px 8px rgba(0,0,0,.3);
+    --shadow-md:0 10px 30px rgba(0,0,0,.35);
+    --shadow-lg:0 20px 45px rgba(0,0,0,.45);
+  }
+}
+
+*{ box-sizing:border-box; }
+
 body {
-  font-family: Arial;
-  background: #e0e5ec;
-  margin: 0;
+  font-family:'Heebo', Arial, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, var(--bg-2), transparent),
+    radial-gradient(900px 500px at 110% 10%, var(--primary-soft), transparent),
+    var(--bg-1);
+  background-attachment:fixed;
+  color:var(--text);
+  margin:0;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
 }
 
 .container {
-  max-width: 700px;
+  max-width: 640px;
   margin: auto;
-  padding: 20px;
+  padding: 28px 18px 60px;
 }
 
-.logo {
+/* header */
+.topbar{
   display:flex;
-  justify-content:center;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:28px;
+}
+
+.brand {
+  display:flex;
   align-items:center;
   gap:10px;
+}
+.brand img { width:42px; height:42px; border-radius:12px; box-shadow:var(--shadow-sm); }
+.brand-text h1 { margin:0; font-size:22px; font-weight:800; letter-spacing:-.5px; }
+.brand-text span { font-size:12px; color:var(--text-muted); font-weight:500; }
+
+.auth-area{ display:flex; align-items:center; gap:10px; }
+
+.user-pill{
+  display:none;
+  align-items:center;
+  gap:8px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  padding:6px 14px 6px 6px;
+  border-radius:999px;
+  box-shadow:var(--shadow-sm);
+  font-size:13px;
+  color:var(--text-muted);
+}
+.user-pill .avatar{
+  width:26px; height:26px; border-radius:50%;
+  background:var(--primary); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; text-transform:uppercase;
+  flex-shrink:0;
+}
+.user-pill b{ color:var(--text); }
+.user-pill .quota{
+  background:var(--primary-soft);
+  color:var(--primary);
+  border-radius:999px;
+  padding:2px 9px;
+  font-weight:700;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+/* hero (shown when logged out) */
+.hero{
+  text-align:center;
+  padding:38px 22px 44px;
+  background:var(--surface);
+  border-radius:24px;
+  box-shadow:var(--shadow-md);
+  border:1px solid var(--border);
   margin-bottom:20px;
 }
-.logo img { width:50px; }
-.logo h1 { margin:0; }
+.hero .emoji{ font-size:44px; margin-bottom:6px; }
+.hero h2{ margin:6px 0 10px; font-size:24px; font-weight:800; }
+.hero p{ margin:0 auto 24px; max-width:420px; color:var(--text-muted); line-height:1.7; font-size:15px; }
 
-.card {
-  background:#e0e5ec;
-  border-radius:20px;
-  padding:20px;
-  margin:15px 0;
-  box-shadow:10px 10px 30px #babecc,
-             -10px -10px 30px #ffffff;
+/* buttons */
+button, .btn {
+  font-family:inherit;
+  font-size:15px;
+  font-weight:700;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  color:#fff;
+  padding:13px 18px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease, filter .15s ease;
+  box-shadow:var(--shadow-sm);
 }
+button:hover, .btn:hover{ transform:translateY(-1px); filter:brightness(1.05); }
+button:active, .btn:active{ transform:translateY(0); }
+button:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
+button:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible{
+  outline:2px solid var(--primary); outline-offset:2px;
+}
+
+.w-full{ width:100%; }
+
+.login { background:linear-gradient(135deg,#ea4335,#c5221f); }
+.logout {
+  background:var(--surface);
+  color:var(--text-muted);
+  border:1px solid var(--border);
+  box-shadow:none;
+  padding:10px 16px;
+  font-size:13px;
+}
+.create { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); margin-top:6px; }
+.download { background:linear-gradient(135deg,var(--success),#059669); }
+.delete { background:transparent; color:var(--danger); box-shadow:none; border:1px solid var(--danger-soft); }
+.delete:hover{ background:var(--danger-soft); }
+
+/* cards */
+.card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin:16px 0;
+  box-shadow:var(--shadow-md);
+}
+.card h2{
+  margin:0 0 16px;
+  font-size:17px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.card h2 .badge{
+  margin-inline-start:auto;
+  font-size:12px;
+  font-weight:700;
+  color:var(--primary);
+  background:var(--primary-soft);
+  padding:3px 10px;
+  border-radius:999px;
+}
+
+label{
+  display:block;
+  font-size:12.5px;
+  font-weight:700;
+  color:var(--text-muted);
+  margin:14px 0 6px;
+}
+label:first-of-type{ margin-top:0; }
 
 input, textarea {
   width:100%;
-  padding:10px;
-  margin:5px 0;
-  border-radius:10px;
-  border:none;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1.5px solid var(--border);
+  background:var(--surface-soft);
+  color:var(--text);
+  font-family:inherit;
+  font-size:14.5px;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+input::placeholder, textarea::placeholder{ color:var(--text-muted); opacity:.7; }
+input:focus, textarea:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 4px var(--primary-soft);
+  outline:none;
+}
+textarea{ min-height:80px; resize:vertical; }
+
+.field-error{
+  border-color:var(--danger) !important;
+  box-shadow:0 0 0 4px var(--danger-soft) !important;
 }
 
-button {
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  color:white;
+/* toast status */
+.toast{
+  margin-top:14px;
+  padding:12px 14px;
+  border-radius:12px;
+  font-size:14px;
+  font-weight:600;
+  display:none;
+  align-items:center;
+  gap:8px;
+  line-height:1.6;
 }
+.toast a{ color:inherit; text-decoration:underline; }
+.toast.show{ display:flex; }
+.toast.ok{ background:var(--success-soft); color:var(--success); }
+.toast.err{ background:var(--danger-soft); color:var(--danger); }
+.toast.info{ background:var(--primary-soft); color:var(--primary); }
 
-.login { background:#DB4437; }
-.logout { background:#555; }
-.create { background:#0984e3; }
-.download { background:#00b894; }
-.delete { background:#d63031; }
+/* qr result */
+#qrNew{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:16px; }
+#qrNew canvas{ border-radius:12px; box-shadow:var(--shadow-sm); background:#fff; padding:8px; }
+#qrNew .download{ width:auto; padding:10px 20px; font-size:13.5px; }
 
-.info {
+/* items list */
+#items{ display:flex; flex-direction:column; gap:12px; }
+.item{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  background:var(--surface-soft);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+}
+.item canvas{ border-radius:10px; background:#fff; padding:5px; flex-shrink:0; box-shadow:var(--shadow-sm); }
+.item .item-body{ flex:1; min-width:0; }
+.item .item-body b{ display:block; font-size:15px; margin-bottom:2px; }
+.item .item-body a{ font-size:12.5px; color:var(--primary); text-decoration:none; }
+.item .item-body a:hover{ text-decoration:underline; }
+.item .item-actions{ display:flex; flex-direction:column; gap:6px; }
+.item .item-actions button{ width:auto; padding:8px 12px; font-size:12.5px; }
+
+.empty-state{
   text-align:center;
-  margin-bottom:10px;
+  padding:30px 10px;
+  color:var(--text-muted);
+  font-size:14px;
+}
+.empty-state .emoji{ font-size:30px; display:block; margin-bottom:8px; }
+
+.skeleton{
+  background:linear-gradient(90deg, var(--surface-soft) 25%, var(--border) 37%, var(--surface-soft) 63%);
+  background-size:400% 100%;
+  animation:shimmer 1.4s ease infinite;
+  border-radius:14px;
+  height:78px;
+}
+@keyframes shimmer{ 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+
+.spinner{
+  width:16px; height:16px;
+  border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.5);
+  border-top-color:#fff;
+  animation:spin .7s linear infinite;
+  display:inline-block;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+footer{
+  text-align:center;
+  margin-top:34px;
+  font-size:12px;
+  color:var(--text-muted);
+}
+
+.fade-in{ animation:fadeIn .35s ease both; }
+@keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+@media (max-width:420px){
+  .brand-text span{ display:none; }
+  .item{ flex-wrap:wrap; }
 }
 </style>
 </head>
@@ -72,38 +332,61 @@ button {
 
 <div class="container">
 
-  <div class="logo">
-    <img src="logo.png">
-    <h1>NeverLost</h1>
+  <div class="topbar">
+    <div class="brand">
+      <img src="logo.png" alt="NeverLost">
+      <div class="brand-text">
+        <h1>NeverLost</h1>
+        <span>תגי QR חכמים לחפצים שלך</span>
+      </div>
+    </div>
+
+    <div class="auth-area">
+      <div id="userInfo" class="user-pill"></div>
+      <button id="loginBtn" class="login">🔐 התחבר עם Google</button>
+      <button id="logoutBtn" class="logout" style="display:none;">התנתק</button>
+    </div>
   </div>
 
-  <button id="loginBtn" class="login">🔐 התחבר עם Google</button>
-  <button id="logoutBtn" class="logout" style="display:none;">🔓 התנתק</button>
-
-  <div id="userInfo" class="info"></div>
+  <div id="hero" class="hero">
+    <div class="emoji">🏷️</div>
+    <h2>לא עוד חפצים אבודים</h2>
+    <p>הדביקו תג NeverLost על התיק, המפתחות או המחשב שלכם. מי שימצא אותם יסרוק את קוד ה-QR וייצור איתכם קשר מיידית — בלי לחשוף את הפרטים שלכם בפומבי.</p>
+  </div>
 
   <div id="app" style="display:none;">
 
-    <div class="card">
-      <h2>צור תג חדש</h2>
+    <div class="card fade-in">
+      <h2>➕ צור תג חדש</h2>
 
-      <input id="name" placeholder="שם החפץ">
-      <textarea id="message" placeholder="טקסט למוצא"></textarea>
-      <input id="phone" placeholder="טלפון">
-      <input id="email" placeholder="אימייל">
+      <label for="name">שם החפץ</label>
+      <input id="name" placeholder="לדוגמה: תיק גב, מפתחות, מחשב נייד">
 
-      <button id="createBtn" class="create">➕ צור תג</button>
+      <label for="message">טקסט למוצא (אופציונלי)</label>
+      <textarea id="message" placeholder="לדוגמה: תודה שמצאת! אשמח לקבל בחזרה 🙏"></textarea>
 
-      <p id="status"></p>
+      <label for="phone">טלפון</label>
+      <input id="phone" type="tel" placeholder="05X-XXXXXXX">
+
+      <label for="email">אימייל (אופציונלי)</label>
+      <input id="email" type="email" placeholder="name@example.com">
+
+      <button id="createBtn" class="create w-full">
+        <span id="createBtnLabel">➕ צור תג</span>
+      </button>
+
+      <div id="status" class="toast"></div>
       <div id="qrNew"></div>
     </div>
 
-    <div class="card">
-      <h2>התגים שלי</h2>
+    <div class="card fade-in">
+      <h2>🏷️ התגים שלי <span id="itemsBadge" class="badge" style="display:none;"></span></h2>
       <div id="items"></div>
     </div>
 
   </div>
+
+  <footer>NeverLost &middot; תגי QR לחפצים אבודים</footer>
 
 </div>
 
@@ -111,9 +394,9 @@ button {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc } 
+import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } 
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
@@ -125,16 +408,64 @@ const firebaseConfig = {
   appId: "1:536499158176:web:ea2fbf70e173ab59a9ddc5"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
 
+// ---- explicit element refs (avoid relying on window auto-globals) ----
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const userInfo = document.getElementById("userInfo");
+const heroEl = document.getElementById("hero");
+const appEl = document.getElementById("app");
+const nameInput = document.getElementById("name");
+const messageInput = document.getElementById("message");
+const phoneInput = document.getElementById("phone");
+const emailInput = document.getElementById("email");
+const createBtn = document.getElementById("createBtn");
+const createBtnLabel = document.getElementById("createBtnLabel");
+const statusEl = document.getElementById("status");
+const qrNewEl = document.getElementById("qrNew");
+const itemsEl = document.getElementById("items");
+const itemsBadge = document.getElementById("itemsBadge");
+
 let userEmail = "";
 
-// 🔥 LIMIT SYSTEM
+function showStatus(text, type){
+  statusEl.className = "toast show " + (type || "info");
+  statusEl.innerHTML = text;
+}
+function clearStatus(){
+  statusEl.className = "toast";
+  statusEl.innerHTML = "";
+}
+
+// 🔥 PRO LIMIT SOURCE
+// Paste the Google Apps Script Web App URL here once you deploy it
+// (template + step-by-step setup in google-sheets-pro/SETUP.md).
+// Leave empty to keep using the local pro.txt file as before.
+const PRO_SHEET_URL = "https://script.google.com/macros/s/AKfycbzBjoq4KazGF-UsYyCqisRyVk6LrhusW4CnBzT8pxVJTXjfhPPYiID1gd0KZX03h3kjCQ/exec";
+
+// LIMIT SYSTEM
 async function getUserLimit(email){
+    const normEmail = (email||"").trim().toLowerCase();
+
+    if(PRO_SHEET_URL){
+        try{
+            const res = await fetch(PRO_SHEET_URL);
+            const data = await res.json();
+            const entry = data[normEmail];
+
+            if(!entry) return 5;
+            if(entry.unlimited) return Infinity;
+            return entry.limit > 0 ? entry.limit : 5;
+        }catch(err){
+            console.error("Pro sheet lookup failed", err);
+            return 5;
+        }
+    }
+
     try{
         const res = await fetch("pro.txt");
         const text = await res.text();
@@ -147,11 +478,11 @@ async function getUserLimit(email){
             const match = line.match(/^(.+?)\s*-\s*([^\s]+)(?:\(([^)]+)\))?$/);
             if(!match) return;
 
-            const mail = match[1].trim();
+            const mail = match[1].trim().toLowerCase();
             const val = match[2].trim();
             const exp = match[3];
 
-            if(mail !== email) return;
+            if(mail !== normEmail) return;
 
             if(exp){
                 const [d,m,y]=exp.split(".");
@@ -170,8 +501,33 @@ async function getUserLimit(email){
     }
 }
 
+function initials(email){
+  return (email||"?").trim().charAt(0).toUpperCase();
+}
+
+// Cache the pro-limit lookup for the session so we don't hit the sheet/pro.txt
+// on every load — this is what was making item loading feel slow.
+let limitCache = null; // { email, promise }
+
+function getUserLimitCached(email){
+    if(limitCache && limitCache.email === email) return limitCache.promise;
+    const p = getUserLimit(email);
+    limitCache = { email, promise: p };
+    return p;
+}
+
 // LOGIN
-loginBtn.onclick = ()=> signInWithPopup(auth, provider);
+loginBtn.onclick = async ()=>{
+  loginBtn.disabled = true;
+  try{
+    await signInWithPopup(auth, provider);
+  }catch(err){
+    console.error(err);
+    showStatus("❌ ההתחברות נכשלה, נסו שוב", "err");
+  }finally{
+    loginBtn.disabled = false;
+  }
+};
 
 // LOGOUT
 logoutBtn.onclick = async ()=>{
@@ -183,124 +539,173 @@ onAuthStateChanged(auth, async user=>{
     if(user){
         userEmail = user.email;
 
-        loginBtn.style.display="none";
-        logoutBtn.style.display="block";
-        appDiv.style.display="block";
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-flex";
+        heroEl.style.display = "none";
+        appEl.style.display = "block";
+
+        userInfo.style.display = "flex";
+        userInfo.innerHTML = `<span class="avatar">${initials(userEmail)}</span><b>${userEmail}</b>`;
 
         loadItems();
     } else {
-        loginBtn.style.display="block";
-        logoutBtn.style.display="none";
-        appDiv.style.display="none";
+        userEmail = "";
+        limitCache = null;
+        loginBtn.style.display = "inline-flex";
+        logoutBtn.style.display = "none";
+        userInfo.style.display = "none";
+        heroEl.style.display = "block";
+        appEl.style.display = "none";
     }
 });
 
 // CREATE
 createBtn.onclick = async ()=>{
 
-    const name = nameInput.value;
-    const message = messageInput.value;
-    const phone = phoneInput.value;
-    const email = emailInput.value;
+    const name = nameInput.value.trim();
+    const message = messageInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const email = emailInput.value.trim();
+
+    nameInput.classList.remove("field-error");
+    phoneInput.classList.remove("field-error");
 
     if(!name || !phone){
-        status.innerText="מלא שם וטלפון";
+        if(!name) nameInput.classList.add("field-error");
+        if(!phone) phoneInput.classList.add("field-error");
+        showStatus("⚠️ נא למלא שם וטלפון", "err");
         return;
     }
 
-    const q = query(collection(db,"items"), where("owner","==",userEmail));
-    const snapshot = await getDocs(q);
+    createBtn.disabled = true;
+    createBtnLabel.innerHTML = '<span class="spinner"></span> יוצר תג...';
+    clearStatus();
 
-    const limit = await getUserLimit(userEmail);
+    try{
+        const q = query(collection(db,"items"), where("owner","==",userEmail));
+        const [snapshot, limit] = await Promise.all([
+            getDocs(q),
+            getUserLimitCached(userEmail)
+        ]);
 
-    if(snapshot.size >= limit){
-        status.innerText="אין תגים זמינים";
-        return;
+        if(snapshot.size >= limit){
+            showStatus("🚫 הגעת למכסת התגים שלך", "err");
+            return;
+        }
+
+        const docRef = await addDoc(collection(db,"items"), {
+            name, message, phone, email, owner:userEmail
+        });
+
+        const link = `https://rb077858.github.io/neverlost/tag.html?id=${docRef.id}`;
+
+        showStatus(`✅ התג נוצר בהצלחה!<br><a href="${link}" target="_blank" rel="noopener">פתח את דף התג</a>`, "ok");
+
+        // QR
+        qrNewEl.innerHTML = "";
+        const canvas = document.createElement("canvas");
+        qrNewEl.appendChild(canvas);
+        await QRCode.toCanvas(canvas, link, {width:200, margin:1, color:{dark:"#1c1f33"}});
+
+        const dl = document.createElement("button");
+        dl.innerHTML = "⬇ הורד QR";
+        dl.className = "download";
+        dl.onclick = ()=>{
+            const a = document.createElement("a");
+            a.href = canvas.toDataURL();
+            a.download = name + ".png";
+            a.click();
+        };
+        qrNewEl.appendChild(dl);
+
+        // reset
+        nameInput.value = "";
+        messageInput.value = "";
+        phoneInput.value = "";
+        emailInput.value = "";
+
+        loadItems();
+    }catch(err){
+        console.error(err);
+        showStatus("❌ משהו השתבש, נסו שוב", "err");
+    }finally{
+        createBtn.disabled = false;
+        createBtnLabel.innerHTML = "➕ צור תג";
     }
-
-    const docRef = await addDoc(collection(db,"items"), {
-        name,message,phone,email,owner:userEmail
-    });
-
-    const link = `https://rb077858.github.io/neverlost/tag.html?id=${docRef.id}`;
-
-    status.innerHTML = `✅ נוצר!<br><a href="${link}" target="_blank">פתח</a>`;
-
-    // QR
-    qrNew.innerHTML="";
-    const canvas=document.createElement("canvas");
-    qrNew.appendChild(canvas);
-    await QRCode.toCanvas(canvas, link, {width:200});
-
-    const dl=document.createElement("button");
-    dl.innerText="⬇ הורד QR";
-    dl.className="download";
-    dl.onclick=()=>{
-        const a=document.createElement("a");
-        a.href=canvas.toDataURL();
-        a.download=name+".png";
-        a.click();
-    };
-    qrNew.appendChild(dl);
-
-    // reset
-    nameInput.value="";
-    messageInput.value="";
-    phoneInput.value="";
-    emailInput.value="";
-
-    loadItems();
 };
 
 // LOAD ITEMS
 async function loadItems(){
 
-    items.innerHTML="";
+    itemsEl.innerHTML = `<div class="skeleton"></div><div class="skeleton"></div>`;
 
-    const q = query(collection(db,"items"), where("owner","==",userEmail));
-    const snapshot = await getDocs(q);
+    try{
+        const q = query(collection(db,"items"), where("owner","==",userEmail));
+        const [snapshot, limit] = await Promise.all([
+            getDocs(q),
+            getUserLimitCached(userEmail)
+        ]);
+        const remaining = limit===Infinity ? "∞" : Math.max(0, limit - snapshot.size);
 
-    const limit = await getUserLimit(userEmail);
-    const remaining = limit===Infinity?"∞":Math.max(0, limit - snapshot.size);
+        itemsBadge.style.display = "inline-block";
+        itemsBadge.innerText = `נשארו ${remaining} תגים`;
 
-    userInfo.innerText = `${userEmail} | נשאר: ${remaining}`;
+        itemsEl.innerHTML = "";
 
-    snapshot.forEach(docSnap=>{
-        const item=docSnap.data();
-        const id=docSnap.id;
-        const link=`https://rb077858.github.io/neverlost/tag.html?id=${id}`;
+        if(snapshot.empty){
+            itemsEl.innerHTML = `<div class="empty-state"><span class="emoji">🗂️</span>עדיין לא יצרת תגים.<br>מלאו את הטופס למעלה כדי להתחיל.</div>`;
+            return;
+        }
 
-        const div=document.createElement("div");
-        div.className="card";
+        snapshot.forEach(docSnap=>{
+            const item = docSnap.data();
+            const id = docSnap.id;
+            const link = `https://rb077858.github.io/neverlost/tag.html?id=${id}`;
 
-        div.innerHTML=`<b>${item.name}</b><br><a href="${link}" target="_blank">פתח</a>`;
+            const div = document.createElement("div");
+            div.className = "item fade-in";
 
-        const canvas=document.createElement("canvas");
-        QRCode.toCanvas(canvas, link, {width:120});
-        div.appendChild(canvas);
+            const canvas = document.createElement("canvas");
+            QRCode.toCanvas(canvas, link, {width:74, margin:1, color:{dark:"#1c1f33"}});
+            div.appendChild(canvas);
 
-        const dl=document.createElement("button");
-        dl.innerText="⬇ הורד QR";
-        dl.className="download";
-        dl.onclick=()=>{
-            const a=document.createElement("a");
-            a.href=canvas.toDataURL();
-            a.download=item.name+".png";
-            a.click();
-        };
-        div.appendChild(dl);
+            const body = document.createElement("div");
+            body.className = "item-body";
+            body.innerHTML = `<b>${item.name}</b><a href="${link}" target="_blank" rel="noopener">פתח דף תג ↗</a>`;
+            div.appendChild(body);
 
-        const del=document.createElement("button");
-        del.innerText="מחק";
-        del.className="delete";
-        del.onclick=async ()=>{
-            await deleteDoc(doc(db,"items",id));
-            loadItems();
-        };
-        div.appendChild(del);
+            const actions = document.createElement("div");
+            actions.className = "item-actions";
 
-        items.appendChild(div);
-    });
+            const dl = document.createElement("button");
+            dl.innerText = "⬇ QR";
+            dl.className = "download";
+            dl.onclick = ()=>{
+                const a = document.createElement("a");
+                a.href = canvas.toDataURL();
+                a.download = item.name + ".png";
+                a.click();
+            };
+            actions.appendChild(dl);
+
+            const del = document.createElement("button");
+            del.innerText = "מחק";
+            del.className = "delete";
+            del.onclick = async ()=>{
+                if(!confirm(`למחוק את התג "${item.name}"?`)) return;
+                del.disabled = true;
+                await deleteDoc(doc(db,"items",id));
+                loadItems();
+            };
+            actions.appendChild(del);
+
+            div.appendChild(actions);
+            itemsEl.appendChild(div);
+        });
+    }catch(err){
+        console.error(err);
+        itemsEl.innerHTML = `<div class="empty-state">❌ שגיאה בטעינת התגים</div>`;
+    }
 }
 </script>
 
