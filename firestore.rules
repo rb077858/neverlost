@@ -1,0 +1,26 @@
+// Suggested Firestore rules for NeverLost after the move to login.reembir.com.
+//
+// Users are signed into Firebase with a custom token minted by login.reembir.com
+// (see sso/README.md in the rb077858.github.io repo, step "Firebase"). The token carries
+// the account email as the claim `sso_email`, which is what `owner` holds on every item.
+//
+// Paste into Firebase Console → Firestore → Rules only AFTER FIREBASE_SERVICE_ACCOUNT
+// is configured on the login server — otherwise signed-in users won't be able to write.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /items/{itemId} {
+      // tag.html: anyone who scans a tag can open that one tag.
+      allow get: if true;
+
+      // The owner can list, create and delete their own tags.
+      allow list: if request.auth != null
+                  && resource.data.owner == request.auth.token.sso_email;
+      allow create: if request.auth != null
+                    && request.resource.data.owner == request.auth.token.sso_email;
+      allow delete: if request.auth != null
+                    && resource.data.owner == request.auth.token.sso_email;
+      allow update: if false;
+    }
+  }
+}
