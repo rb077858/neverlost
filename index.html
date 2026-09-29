@@ -168,7 +168,7 @@ button:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-vi
 
 .w-full{ width:100%; }
 
-.login { background:linear-gradient(135deg,#ea4335,#c5221f); }
+.login { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); }
 .logout {
   background:var(--surface);
   color:var(--text-muted);
@@ -343,7 +343,7 @@ footer{
 
     <div class="auth-area">
       <div id="userInfo" class="user-pill"></div>
-      <button id="loginBtn" class="login">🔐 התחבר עם Google</button>
+      <button id="loginBtn" class="login">🔐 התחברות</button>
       <button id="logoutBtn" class="logout" style="display:none;">התנתק</button>
     </div>
   </div>
@@ -352,6 +352,8 @@ footer{
     <div class="emoji">🏷️</div>
     <h2>לא עוד חפצים אבודים</h2>
     <p>הדביקו תג NeverLost על התיק, המפתחות או המחשב שלכם. מי שימצא אותם יסרוק את קוד ה-QR וייצור איתכם קשר מיידית — בלי לחשוף את הפרטים שלכם בפומבי.</p>
+    <button id="heroLoginBtn" class="login">🔐 התחברות עם חשבון reem.bi</button>
+    <div id="heroStatus" class="toast"></div>
   </div>
 
   <div id="app" style="display:none;">
@@ -392,11 +394,13 @@ footer{
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
+<script src="https://login.reembir.com/sdk.js"></script>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut }
+import { getAuth, signInWithCustomToken, signOut }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
@@ -410,11 +414,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth();
-const provider = new GoogleAuthProvider();
+const firebaseAuth = getAuth(app);
 
 // ---- explicit element refs (avoid relying on window auto-globals) ----
 const loginBtn = document.getElementById("loginBtn");
+const heroLoginBtn = document.getElementById("heroLoginBtn");
+const heroStatus = document.getElementById("heroStatus");
 const logoutBtn = document.getElementById("logoutBtn");
 const userInfo = document.getElementById("userInfo");
 const heroEl = document.getElementById("hero");
@@ -431,6 +436,7 @@ const itemsEl = document.getElementById("items");
 const itemsBadge = document.getElementById("itemsBadge");
 
 let userEmail = "";
+let currentUser = null;
 
 function showStatus(text, type){
   statusEl.className = "toast show " + (type || "info");
@@ -440,102 +446,96 @@ function clearStatus(){
   statusEl.className = "toast";
   statusEl.innerHTML = "";
 }
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
 
-// 🔥 PRO LIMIT SOURCE
-// Paste the Google Apps Script Web App URL here once you deploy it
-// (template + step-by-step setup in google-sheets-pro/SETUP.md).
-// Leave empty to keep using the local pro.txt file as before.
+// 🔥 PLANS / LIMITS
+// Plans are managed from the admin dashboard at login.reembir.com/admin
+// (site "neverlost", feature "tag_limit": a number, or -1 for unlimited).
+const DEFAULT_LIMIT = 5;
+
+function limitFromAccount(user){
+    const raw = user && user.features ? user.features.tag_limit : undefined;
+    if(raw === -1 || raw === "unlimited") return Infinity;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_LIMIT;
+}
+
+// Legacy: Pro users from the old Google Sheet keep their limit until they are moved
+// into the dashboard. Once everyone is migrated, set this to "" to switch it off.
 const PRO_SHEET_URL = "https://script.google.com/macros/s/AKfycbzBjoq4KazGF-UsYyCqisRyVk6LrhusW4CnBzT8pxVJTXjfhPPYiID1gd0KZX03h3kjCQ/exec";
 
-// LIMIT SYSTEM
-async function getUserLimit(email){
-    const normEmail = (email||"").trim().toLowerCase();
-
-    if(PRO_SHEET_URL){
-        try{
-            const res = await fetch(PRO_SHEET_URL);
-            const data = await res.json();
-            const entry = data[normEmail];
-
-            if(!entry) return 5;
-            if(entry.unlimited) return Infinity;
-            return entry.limit > 0 ? entry.limit : 5;
-        }catch(err){
-            console.error("Pro sheet lookup failed", err);
-            return 5;
-        }
-    }
-
+async function getLegacySheetLimit(email){
+    if(!PRO_SHEET_URL) return 0;
     try{
-        const res = await fetch("pro.txt");
-        const text = await res.text();
-
-        let total = 0;
-        let unlimited = false;
-        const today = new Date();
-
-        text.split("\n").forEach(line=>{
-            const match = line.match(/^(.+?)\s*-\s*([^\s]+)(?:\(([^)]+)\))?$/);
-            if(!match) return;
-
-            const mail = match[1].trim().toLowerCase();
-            const val = match[2].trim();
-            const exp = match[3];
-
-            if(mail !== normEmail) return;
-
-            if(exp){
-                const [d,m,y]=exp.split(".");
-                if(new Date(`${y}-${m}-${d}`) < today) return;
-            }
-
-            if(val==="+") unlimited=true;
-            else total += parseInt(val)||0;
-        });
-
-        if(unlimited) return Infinity;
-        return total>0?total:5;
-
-    }catch{
-        return 5;
+        const res = await fetch(PRO_SHEET_URL);
+        const data = await res.json();
+        const entry = data[(email||"").trim().toLowerCase()];
+        if(!entry) return 0;
+        if(entry.unlimited) return Infinity;
+        return entry.limit > 0 ? entry.limit : 0;
+    }catch(err){
+        console.error("Pro sheet lookup failed", err);
+        return 0;
     }
 }
 
-function initials(email){
-  return (email||"?").trim().charAt(0).toUpperCase();
+// Cached per session so we don't hit the sheet on every load.
+let legacyCache = null; // { email, promise }
+
+async function getUserLimit(){
+    const fromAccount = limitFromAccount(currentUser);
+    if(!legacyCache || legacyCache.email !== userEmail){
+        legacyCache = { email: userEmail, promise: getLegacySheetLimit(userEmail) };
+    }
+    return Math.max(fromAccount, await legacyCache.promise);
 }
 
-// Cache the pro-limit lookup for the session so we don't hit the sheet/pro.txt
-// on every load — this is what was making item loading feel slow.
-let limitCache = null; // { email, promise }
-
-function getUserLimitCached(email){
-    if(limitCache && limitCache.email === email) return limitCache.promise;
-    const p = getUserLimit(email);
-    limitCache = { email, promise: p };
-    return p;
+function initials(user){
+  return escapeHtml((user.name || user.email || "?").trim().charAt(0).toUpperCase());
 }
 
-// LOGIN
-loginBtn.onclick = async ()=>{
-  loginBtn.disabled = true;
-  try{
-    await signInWithPopup(auth, provider);
-  }catch(err){
-    console.error(err);
-    showStatus("❌ ההתחברות נכשלה, נסו שוב", "err");
-  }finally{
-    loginBtn.disabled = false;
-  }
-};
+// Sign Firebase in as the same person, so Firestore security rules know who is asking.
+// (Works once FIREBASE_SERVICE_ACCOUNT is set on login.reembir.com — until then this is skipped.)
+async function syncFirebaseUser(user){
+    try{
+        await firebaseAuth.authStateReady();
+        if(firebaseAuth.currentUser && firebaseAuth.currentUser.uid === user.id) return;
+        const token = await sso.getFirebaseToken();
+        await signInWithCustomToken(firebaseAuth, token);
+    }catch(err){
+        if(err.code !== "not_configured") console.warn("Firebase sign-in skipped:", err.message || err);
+    }
+}
+
+// LOGIN — one reem.bi account for every project (login.reembir.com)
+const sso = window.ReemAuth ? ReemAuth.init({ clientId: "neverlost" }) : null;
+
+function showHeroMessage(text){
+    heroStatus.className = "toast show err";
+    heroStatus.textContent = text;
+}
+
+if(!sso){
+    loginBtn.disabled = heroLoginBtn.disabled = true;
+    showHeroMessage("שירות ההתחברות לא זמין כרגע, נסו שוב מאוחר יותר.");
+} else {
+    loginBtn.onclick = heroLoginBtn.onclick = ()=> sso.login();
+    if(sso.error === "access_denied" || sso.error === "no_access"){
+        showHeroMessage("לחשבון הזה אין גישה ל-NeverLost.");
+    }
+}
 
 // LOGOUT
 logoutBtn.onclick = async ()=>{
-    await signOut(auth);
+    await Promise.all([sso.logout(), signOut(firebaseAuth).catch(()=>{})]);
 };
 
 // AUTH STATE
-onAuthStateChanged(auth, async user=>{
+if(sso) sso.onChange(async user=>{
+    const changed = !currentUser || !user || currentUser.id !== user.id;
+    currentUser = user;
     if(user){
         userEmail = user.email;
 
@@ -544,13 +544,20 @@ onAuthStateChanged(auth, async user=>{
         heroEl.style.display = "none";
         appEl.style.display = "block";
 
+        const plan = user.plan && user.plan.name && user.plan.id !== "neverlost:free"
+          ? `<span class="quota">${escapeHtml(user.plan.name)}</span>` : "";
         userInfo.style.display = "flex";
-        userInfo.innerHTML = `<span class="avatar">${initials(userEmail)}</span><b>${userEmail}</b>`;
+        userInfo.innerHTML = `<span class="avatar">${initials(user)}</span><b>${escapeHtml(userEmail)}</b>${plan}`;
 
-        loadItems();
+        if(changed){
+            await syncFirebaseUser(user);
+            loadItems();
+        } else {
+            loadItems(); // plan may have changed — refresh the remaining count
+        }
     } else {
         userEmail = "";
-        limitCache = null;
+        legacyCache = null;
         loginBtn.style.display = "inline-flex";
         logoutBtn.style.display = "none";
         userInfo.style.display = "none";
@@ -585,7 +592,7 @@ createBtn.onclick = async ()=>{
         const q = query(collection(db,"items"), where("owner","==",userEmail));
         const [snapshot, limit] = await Promise.all([
             getDocs(q),
-            getUserLimitCached(userEmail)
+            getUserLimit()
         ]);
 
         if(snapshot.size >= limit){
@@ -643,7 +650,7 @@ async function loadItems(){
         const q = query(collection(db,"items"), where("owner","==",userEmail));
         const [snapshot, limit] = await Promise.all([
             getDocs(q),
-            getUserLimitCached(userEmail)
+            getUserLimit()
         ]);
         const remaining = limit===Infinity ? "∞" : Math.max(0, limit - snapshot.size);
 
@@ -671,7 +678,7 @@ async function loadItems(){
 
             const body = document.createElement("div");
             body.className = "item-body";
-            body.innerHTML = `<b>${item.name}</b><a href="${link}" target="_blank" rel="noopener">פתח דף תג ↗</a>`;
+            body.innerHTML = `<b>${escapeHtml(item.name)}</b><a href="${link}" target="_blank" rel="noopener">פתח דף תג ↗</a>`;
             div.appendChild(body);
 
             const actions = document.createElement("div");
