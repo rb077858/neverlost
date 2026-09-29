@@ -315,8 +315,11 @@ footer{
   text-align:center;
   margin-top:34px;
   font-size:12px;
+  line-height:1.9;
   color:var(--text-muted);
 }
+footer a{ color:var(--text-muted); }
+footer a:hover{ color:var(--primary); }
 
 .fade-in{ animation:fadeIn .35s ease both; }
 @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
@@ -417,7 +420,10 @@ footer{
 
   </div>
 
-  <footer>NeverLost &middot; תגי QR לחפצים אבודים</footer>
+  <footer>
+    NeverLost &middot; תגי QR לחפצים אבודים<br>
+    <a href="https://reembir.com/terms.html">תנאי שימוש</a> &middot; <a href="https://reembir.com/privacy.html">מדיניות פרטיות</a>
+  </footer>
 
 </div>
 
