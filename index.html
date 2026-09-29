@@ -497,34 +497,8 @@ function limitFromAccount(user){
     return Number.isFinite(n) && n > 0 ? n : DEFAULT_LIMIT;
 }
 
-// Legacy: Pro users from the old Google Sheet keep their limit until they are moved
-// into the dashboard. Once everyone is migrated, set this to "" to switch it off.
-const PRO_SHEET_URL = "https://script.google.com/macros/s/AKfycbzBjoq4KazGF-UsYyCqisRyVk6LrhusW4CnBzT8pxVJTXjfhPPYiID1gd0KZX03h3kjCQ/exec";
-
-async function getLegacySheetLimit(email){
-    if(!PRO_SHEET_URL) return 0;
-    try{
-        const res = await fetch(PRO_SHEET_URL);
-        const data = await res.json();
-        const entry = data[(email||"").trim().toLowerCase()];
-        if(!entry) return 0;
-        if(entry.unlimited) return Infinity;
-        return entry.limit > 0 ? entry.limit : 0;
-    }catch(err){
-        console.error("Pro sheet lookup failed", err);
-        return 0;
-    }
-}
-
-// Cached per session so we don't hit the sheet on every load.
-let legacyCache = null; // { email, promise }
-
 async function getUserLimit(){
-    const fromAccount = limitFromAccount(currentUser);
-    if(!legacyCache || legacyCache.email !== userEmail){
-        legacyCache = { email: userEmail, promise: getLegacySheetLimit(userEmail) };
-    }
-    return Math.max(fromAccount, await legacyCache.promise);
+    return limitFromAccount(currentUser);
 }
 
 function initials(user){
@@ -593,7 +567,6 @@ if(sso) sso.onChange(async user=>{
         }
     } else {
         userEmail = "";
-        legacyCache = null;
         loginBtn.style.display = "inline-flex";
         logoutBtn.style.display = "none";
         userInfo.style.display = "none";
